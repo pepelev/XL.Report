@@ -27,14 +27,17 @@ public sealed class Tests
         - conditional-formatting,
         - hyper-links,
         - sharedStrings,
-        - закрепление областей
+        - закрепление областей,
+        - column width and row height
      */
 
     [Test]
     public async Task Book_Proto()
     {
         await using var book = new StreamBook(
-            new FileStream("D:/archives/test-book.xlsx", FileMode.Create),
+            new WriteOnlyStream(
+                new FileStream("D:/archives/test-book.xlsx", FileMode.Create)
+            ),
             CompressionLevel.Optimal,
             leaveOpen: false
         );
@@ -53,6 +56,27 @@ public sealed class Tests
             var row = new Row(
                 new Cell(book.Strings.String("Hello world!")),
                 new Cell(new Number(509), book.Styles.Register(bigRed))
+            );
+
+            await sheet.WriteRowAsync(row).ConfigureAwait(false);
+            await sheet.WriteRowAsync(row).ConfigureAwait(false);
+            await sheet.CompleteAsync().ConfigureAwait(false);
+        }
+
+        await using (var sheet = book.OpenSheet("Prototype 2"))
+        {
+            var bigRed = new Style(
+                new Appearance(
+                    Alignment.Default,
+                    new Font("Times New Roman", 40, new Color(255, 100, 15), FontStyle.Regular),
+                    Fill.No,
+                    Borders.None
+                ),
+                Format.General
+            );
+            var row = new Row(
+                new Cell(book.Strings.String("Hello world!")),
+                new Cell(new Number(511), book.Styles.Register(bigRed))
             );
 
             await sheet.WriteRowAsync(row).ConfigureAwait(false);

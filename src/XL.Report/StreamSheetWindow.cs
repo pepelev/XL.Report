@@ -19,9 +19,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         activeRange = Range.EntireSheet;
         var settings = new XmlWriterSettings
         {
-            Indent = true,
             Encoding = Encoding.UTF8,
-            NewLineChars = "\n",
             CloseOutput = true
         };
         xml = XmlWriter.Create(stream, settings);

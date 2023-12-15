@@ -82,9 +82,7 @@ public sealed class StreamBook : Book
         using var stream = entry.Open();
         var settings = new XmlWriterSettings
         {
-            Indent = true,
             Encoding = Encoding.UTF8,
-            NewLineChars = "\n"
         };
         using var xml = XmlWriter.Create(stream, settings);
         act(xml);

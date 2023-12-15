@@ -5,7 +5,7 @@ using static XL.Report.XlsxStructure.Styles;
 
 namespace XL.Report.Styles;
 
-public sealed partial class Style
+public sealed partial record Style
 {
     public sealed class Collection
     {

@@ -54,7 +54,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
             throw new InvalidOperationException();
         }
 
-        placed[range.LeftTopCell] = new Cell(content, styleId);
+        placed[range.LeftTop] = new Cell(content, styleId);
     }
 
     public override void Merge(Size size, Content content, StyleId? styleId)
@@ -68,7 +68,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
     {
         var current = Range;
         // todo check size nonnegative
-        var @new = new Range(current.LeftTopCell + offset, newSize ?? current.Size - offset);
+        var @new = new Range(current.LeftTop + offset, newSize ?? current.Size - offset);
         if (!current.Contains(@new))
         {
             throw new InvalidOperationException();
@@ -86,7 +86,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
     {
         int Write()
         {
-            var mostDownY = activeRange.LeftTopCell.Y;
+            var mostDownY = activeRange.LeftTop.Y;
             foreach (var row in Rows)
             {
                 xml.WriteStartElement(XlsxStructure.Worksheet.Row);
@@ -114,7 +114,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
 
         WriteStartOnlyFirstTime();
         var mostDownY = Write();
-        var newActiveRange = activeRange.ReduceDown(mostDownY + 1 - activeRange.LeftTopCell.Y);
+        var newActiveRange = activeRange.ReduceDown(mostDownY + 1 - activeRange.LeftTop.Y);
         // todo continueOnCapturedContext
         await xml.FlushAsync().ConfigureAwait(false);
 

@@ -4,7 +4,11 @@ using System;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-public readonly struct Location : IEquatable<Location>, IParsable<Location>
+public readonly struct Location
+    : IEquatable<Location>
+#if NET7_0_OR_GREATER
+    , IParsable<Location>
+#endif
 {
     private const char ZeroLetter = (char) (FirstLetter - 1);
     private const char FirstLetter = 'A';
@@ -46,7 +50,7 @@ public readonly struct Location : IEquatable<Location>, IParsable<Location>
                 x = x * AlphabetPower + char.ToUpperInvariant(@char) - ZeroLetter;
             }
 
-            var y = int.Parse(match.Groups["Y"].ValueSpan, CultureInfo.InvariantCulture);
+            var y = int.Parse(match.Groups["Y"].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture);
             result = new Location(x, y);
             return result.IsCorrect();
         }

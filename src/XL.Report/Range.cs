@@ -1,8 +1,12 @@
 namespace XL.Report;
 
-public readonly struct Range : IEquatable<Range>, IParsable<Range>
+public readonly struct Range
+    : IEquatable<Range>
+#if NET7_0_OR_GREATER
+    , IParsable<Range>
+#endif
 {
-    public override string ToString() => $"{LeftTopCell}:{RightBottomCell}";
+    public override string ToString() => $"{LeftTop}:{RightBottom}";
 
     public static Range EntireSheet => new(
         new Location(Location.MinX, Location.MinY),
@@ -12,15 +16,32 @@ public readonly struct Range : IEquatable<Range>, IParsable<Range>
         )
     );
 
-    public Range(Location leftTopCell, Size size)
+    public Range(Location leftTop, Size size)
     {
-        LeftTopCell = leftTopCell;
+        LeftTop = leftTop;
         Size = size;
     }
 
+    public static Range Create(Location leftTop, Location rightBottom)
+    {
+        var size = new Size(
+            rightBottom.X - leftTop.X + 1,
+            rightBottom.Y - leftTop.Y + 1
+        );
+
+        if (size.IsDegenerate)
+        {
+            throw new ArgumentException();
+        }
+
+        return new Range(leftTop, size);
+    }
+
+    public bool IsDegenerate => Size.IsDegenerate;
+
     public bool Equals(Range other)
     {
-        return LeftTopCell == other.LeftTopCell && Size == other.Size;
+        return LeftTop == other.LeftTop && Size == other.Size;
     }
 
     public override bool Equals(object? obj)
@@ -35,37 +56,32 @@ public readonly struct Range : IEquatable<Range>, IParsable<Range>
     {
         unchecked
         {
-            return (LeftTopCell.GetHashCode() * 397) ^ Size.GetHashCode();
+            return (LeftTop.GetHashCode() * 397) ^ Size.GetHashCode();
         }
     }
 
     public static bool operator ==(Range a, Range b) => a.Equals(b);
     public static bool operator !=(Range a, Range b) => !(a == b);
 
-    public Location LeftTopCell { get; }
+    // todo this is not a cell, because Size can be empty
+    public Location LeftTop { get; }
     public Size Size { get; }
 
     public bool IsEmpty => Size.Width == 0 || Size.Height == 0;
 
-    public Location RightBottomCell => new(
-        LeftTopCell.X + Size.Width - 1,
-        LeftTopCell.Y + Size.Height - 1
-    );
+    public int Left => LeftTop.X;
+    public int Right => LeftTop.X + Size.Width - 1;
+    public int Top => LeftTop.Y;
+    public int Bottom => LeftTop.Y + Size.Height - 1;
 
-    public Location RightTopCell => new(
-        LeftTopCell.X + Size.Width - 1,
-        LeftTopCell.Y
-    );
-
-    public Location LeftBottomCell => new(
-        LeftTopCell.X,
-        LeftTopCell.Y + Size.Height - 1
-    );
+    public Location RightBottom => new(Right, Bottom);
+    public Location RightTop => new(Right, Top);
+    public Location LeftBottom => new(Left, Bottom);
 
     public bool Intersects(in Range range)
     {
-        return Intersects(LeftTopCell.X, RightBottomCell.X, range.LeftTopCell.X, range.RightBottomCell.X) &&
-               Intersects(LeftTopCell.Y, RightBottomCell.Y, range.LeftTopCell.Y, range.RightBottomCell.Y);
+        return Intersects(LeftTop.X, RightBottom.X, range.LeftTop.X, range.RightBottom.X) &&
+               Intersects(LeftTop.Y, RightBottom.Y, range.LeftTop.Y, range.RightBottom.Y);
     }
 
     private static bool Intersects(int l1, int r1, int l2, int r2)
@@ -123,46 +139,59 @@ public readonly struct Range : IEquatable<Range>, IParsable<Range>
         }
 
         return new Range(
-            LeftTopCell + new Offset(0, offset),
+            LeftTop + new Offset(0, offset),
             Size - new Offset(0, offset)
         );
     }
 
+    public static Range MinimalBounding(Range a, Range b)
+    {
+        var leftTop = new Location(
+            x: Math.Min(a.Left, b.Left),
+            y: Math.Min(a.Top, b.Top)
+        );
+        var rightBottom = new Location(
+            x: Math.Max(a.Right, b.Right),
+            y: Math.Max(a.Bottom, b.Bottom)
+        );
+        return Create(leftTop, rightBottom);
+    }
+
     public Range SplitLeftTop()
     {
-        return new Range(LeftTopCell, new Size(LeftWidth, TopHeight));
+        return new Range(LeftTop, new Size(LeftWidth, TopHeight));
     }
 
     public Range SplitRightTop()
     {
         return new Range(
-            new Location(LeftTopCell.X + LeftWidth, LeftTopCell.Y),
+            new Location(LeftTop.X + LeftWidth, LeftTop.Y),
             new Size(RightWidth, TopHeight));
     }
 
     public Range SplitLeftBottom()
     {
         return new Range(
-            new Location(LeftTopCell.X, LeftTopCell.Y + TopHeight),
+            new Location(LeftTop.X, LeftTop.Y + TopHeight),
             new Size(LeftWidth, BottomHeight));
     }
 
     public Range SplitRightBottom()
     {
         return new Range(
-            new Location(LeftTopCell.X + LeftWidth, LeftTopCell.Y + TopHeight),
+            new Location(LeftTop.X + LeftWidth, LeftTop.Y + TopHeight),
             new Size(RightWidth, BottomHeight));
     }
 
     public bool Contains(in Location location)
     {
-        return LeftTopCell.X <= location.X && location.X <= RightBottomCell.X &&
-               LeftTopCell.Y <= location.Y && location.Y <= RightBottomCell.Y;
+        return LeftTop.X <= location.X && location.X <= RightBottom.X &&
+               LeftTop.Y <= location.Y && location.Y <= RightBottom.Y;
     }
 
     public bool Contains(in Range range)
     {
-        return Contains(range.LeftTopCell) &&
-               Contains(range.RightBottomCell);
+        return Contains(range.LeftTop) &&
+               Contains(range.RightBottom);
     }
 }

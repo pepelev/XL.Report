@@ -29,7 +29,9 @@ public sealed class Tests
         - sharedStrings,
         - закрепление областей,
         - column width and row height
-        - column and row styles
+        - column and row styles,
+        - many styles within one cell
+        - merged cells
      */
 
     [Test]

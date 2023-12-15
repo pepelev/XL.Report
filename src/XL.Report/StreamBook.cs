@@ -143,6 +143,8 @@ public sealed class StreamBook : Book
                         xml.WriteElementString("t", @string);
                     }
                     xml.WriteEndElement();
+
+                    expectedId = new SharedStringId(id.Index + 1);
                 }
             }
             xml.WriteEndElement();

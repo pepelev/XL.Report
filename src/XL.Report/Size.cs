@@ -25,6 +25,8 @@ public readonly struct Size : IEquatable<Size>
     public int Width { get; }
     public int Height { get; }
 
+    public bool IsDegenerate => Width < 0 || Height < 0;
+
     public bool Equals(Size other)
     {
         return Width == other.Width && Height == other.Height;

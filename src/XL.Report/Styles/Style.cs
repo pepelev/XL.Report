@@ -1,46 +1,57 @@
+using System.Diagnostics.Contracts;
+using XL.Report.Styles.Fills;
+
 namespace XL.Report.Styles;
 
-public sealed partial class Style : IEquatable<Style>
+public sealed partial record Style(Appearance Appearance, Format Format)
 {
-    public Style(Appearance appearance, Format format)
-    {
-        Appearance = appearance ?? throw new ArgumentNullException(nameof(appearance));
-        Format = format ?? throw new ArgumentNullException(nameof(format));
-    }
-
     public static Style Default { get; } = new(
         Appearance.Default,
         Format.General
     );
 
-    public Appearance Appearance { get; }
-    public Format Format { get; }
-
-    public bool Equals(Style? other)
+    [Pure]
+    public Style With(Alignment alignment) => this with
     {
-        if (ReferenceEquals(null, other))
-            return false;
-        if (ReferenceEquals(this, other))
-            return true;
-
-        return Appearance.Equals(other.Appearance) && Format.Equals(other.Format);
-    }
-
-    public override bool Equals(object? obj)
-    {
-        if (ReferenceEquals(null, obj))
-            return false;
-        if (ReferenceEquals(this, obj))
-            return true;
-
-        return obj is Style style && Equals(style);
-    }
-
-    public override int GetHashCode()
-    {
-        unchecked
+        Appearance = Appearance with
         {
-            return (Appearance.GetHashCode() * 397) ^ Format.GetHashCode();
+            Alignment = alignment
         }
-    }
+    };
+
+    [Pure]
+    public Style With(Font font) => this with
+    {
+        Appearance = Appearance with
+        {
+            Font = font
+        }
+    };
+
+    [Pure]
+    public Style WithFontFamily(string fontFamily) => With(Appearance.Font with { Family = fontFamily });
+
+    [Pure]
+    public Style WithFontSize(float fontSize) => With(Appearance.Font with { Size = fontSize });
+
+    [Pure]
+    public Style WithFontColor(Color fontColor) => With(Appearance.Font with { Color = fontColor });
+
+    [Pure]
+    public Style With(Fill fill) => this with
+    {
+        Appearance = Appearance with
+        {
+            Fill = fill
+        }
+    };
+
+    [Pure]
+    public Style With(Borders borders) => this with
+    {
+        Appearance = Appearance with
+        {
+            Borders = borders
+        }
+    };
 }

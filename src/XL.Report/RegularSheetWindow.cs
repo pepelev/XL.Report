@@ -3,6 +3,7 @@ using XL.Report.Styles;
 
 namespace XL.Report;
 
+// todo delete
 public sealed class RegularSheetWindow : SheetWindow
 {
     private readonly Dictionary<Offset, Cell> placed = new();
@@ -19,7 +20,7 @@ public sealed class RegularSheetWindow : SheetWindow
         get
         {
             var currentOffset = CurrentOffset;
-            return new Range(startRange.LeftTopCell + currentOffset, startRange.Size - currentOffset);
+            return new Range(startRange.LeftTop + currentOffset, startRange.Size - currentOffset);
         }
     }
 
@@ -29,9 +30,9 @@ public sealed class RegularSheetWindow : SheetWindow
         .Select(
             row =>
             {
-                var y = row.Key + Range.LeftTopCell.Y;
+                var y = row.Key + Range.LeftTop.Y;
                 var contents = row
-                    .Select(pair => (pair.Key.X + Range.LeftTopCell.X, pair.Value))
+                    .Select(pair => (pair.Key.X + Range.LeftTop.X, pair.Value))
                     .OrderBy(pair => pair.Item1);
                 return new Row(y, contents);
             }

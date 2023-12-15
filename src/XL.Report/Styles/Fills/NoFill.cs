@@ -4,8 +4,6 @@ namespace XL.Report.Styles.Fills;
 
 public sealed class NoFill : Fill, IEquatable<NoFill>
 {
-    public static NoFill Singleton { get; } = new();
-
     public bool Equals(NoFill? other)
     {
         return other != null;

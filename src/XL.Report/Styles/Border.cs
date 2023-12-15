@@ -1,5 +1,6 @@
 ﻿namespace XL.Report.Styles;
 
+// todo make struct record
 public sealed class Border : IEquatable<Border>, IBorder
 {
     public Border(BorderStyle style, ColorWithAlpha? color = null)

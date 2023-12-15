@@ -33,7 +33,7 @@ public class Borders : IEquatable<Borders>
         DiagonalBorders.None
     );
 
-    public bool Equals(Borders other)
+    public bool Equals(Borders? other)
     {
         if (ReferenceEquals(null, other))
             return false;
@@ -47,7 +47,7 @@ public class Borders : IEquatable<Borders>
                Equals(Diagonal, other.Diagonal);
     }
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (ReferenceEquals(null, obj))
             return false;

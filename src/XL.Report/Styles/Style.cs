@@ -1,6 +1,6 @@
 namespace XL.Report.Styles;
 
-public sealed class Style : IEquatable<Style>
+public sealed partial class Style : IEquatable<Style>
 {
     public Style(Appearance appearance, Format format)
     {

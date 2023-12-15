@@ -30,14 +30,14 @@ public struct FontStyle : IEquatable<FontStyle>
 
         int GetUnderline()
         {
-            return underline is Underline underlineValue
+            return underline is { } underlineValue
                 ? (int)underlineValue & UnderlineMask
                 : UnderlineNullBit;
         }
 
-        int GetBitValue(bool value, int bit)
+        int GetBitValue(bool condition, int bit)
         {
-            return value
+            return condition
                 ? bit
                 : 0x0000;
         }
@@ -73,7 +73,7 @@ public struct FontStyle : IEquatable<FontStyle>
         return value == other.value;
     }
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         return obj is FontStyle style && Equals(style);
     }
@@ -114,7 +114,7 @@ public struct FontStyle : IEquatable<FontStyle>
             isFirst = false;
         }
 
-        if (Underline is Underline underline)
+        if (Underline is { } underline)
         {
             if (!isFirst)
                 builder.Append(", ");

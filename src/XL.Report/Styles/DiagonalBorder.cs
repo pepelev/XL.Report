@@ -18,7 +18,7 @@ public sealed class DiagonalBorders : IEquatable<DiagonalBorders>, IBorder
     public Color Color { get; }
     public BorderStyle Style { get; }
 
-    public bool Equals(DiagonalBorders other)
+    public bool Equals(DiagonalBorders? other)
     {
         if (ReferenceEquals(null, other))
             return false;
@@ -52,7 +52,7 @@ public sealed class DiagonalBorders : IEquatable<DiagonalBorders>, IBorder
         }
     }
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (ReferenceEquals(null, obj))
             return false;

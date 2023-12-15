@@ -1,3 +1,5 @@
+using XL.Report.Styles;
+
 namespace XL.Report;
 
 public abstract class Book

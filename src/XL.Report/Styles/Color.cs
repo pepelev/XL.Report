@@ -56,7 +56,7 @@ public readonly struct Color : IEquatable<Color>
         return Value == other.Value;
     }
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (ReferenceEquals(null, obj))
             return false;
@@ -64,7 +64,7 @@ public readonly struct Color : IEquatable<Color>
         return obj is Color color && Equals(color);
     }
 
-    public static bool TryParse(string value, out Color result)
+    public static bool TryParse(string? value, out Color result)
     {
         if (value == null)
         {

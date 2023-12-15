@@ -29,7 +29,7 @@ public sealed class Font : IEquatable<Font>
     public float Size { get; }
     public Color Color { get; }
 
-    public bool Equals(Font other)
+    public bool Equals(Font? other)
     {
         if (ReferenceEquals(null, other))
             return false;
@@ -60,7 +60,7 @@ public sealed class Font : IEquatable<Font>
         return builder.ToString();
     }
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (ReferenceEquals(null, obj))
             return false;

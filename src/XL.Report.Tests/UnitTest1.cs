@@ -1,6 +1,8 @@
 using System.IO.Compression;
 using System.Text;
 using System.Xml;
+using XL.Report.Styles;
+using XL.Report.Styles.Fills;
 
 namespace XL.Report.Tests;
 
@@ -27,10 +29,20 @@ public sealed class Tests
     public void Test1()
     {
         var window = new RegularSheetWindow(Range.Whole);
+        var styles = new Style.Collection();
 
+        var bigRed = new Style(
+            new Appearance(
+                Alignment.Default,
+                new Font("Times New Roman", 40, new Color(255, 100, 15), FontStyle.Regular),
+                Fill.No,
+                Borders.None
+            ),
+            Format.General
+        );
         var row = new Row(
-            new Cell(new InlineString("Hello world!"), new StyleId()),
-            new Cell(new Number(509), new StyleId())
+            new Cell(new InlineString("Hello world!"), styles.Register(Style.Default)),
+            new Cell(new Number(509), styles.Register(bigRed))
         );
 
         row.Write(window);
@@ -42,6 +54,7 @@ public sealed class Tests
 
         Write("xl/worksheets/sheet1.xml", xml => Sheet(xml, window));
         Write("xl/workbook.xml", xml => Workbook(xml, "Щит1"));
+        Write("xl/styles.xml", styles.Write);
         Write("[Content_Types].xml", ContentTypes);
         Write("_rels/.rels", Rels);
         Write("xl/_rels/workbook.xml.rels", WorkbookRels);
@@ -148,6 +161,12 @@ public sealed class Tests
                 xml.WriteAttributeString("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet");
                 xml.WriteAttributeString("Target", "worksheets/sheet1.xml");
                 xml.WriteEndElement();
+
+                xml.WriteStartElement("Relationship");
+                xml.WriteAttributeString("Id", "rId2");
+                xml.WriteAttributeString("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles");
+                xml.WriteAttributeString("Target", "styles.xml");
+                xml.WriteEndElement();
             }
             xml.WriteEndElement();
         }
@@ -193,6 +212,11 @@ public sealed class Tests
                 xml.WriteStartElement("Override");
                 xml.WriteAttributeString("PartName", "/xl/worksheets/sheet1.xml");
                 xml.WriteAttributeString("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml");
+                xml.WriteEndElement();
+
+                xml.WriteStartElement("Override");
+                xml.WriteAttributeString("PartName", "/xl/styles.xml");
+                xml.WriteAttributeString("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml");
                 xml.WriteEndElement();
             }
             xml.WriteEndElement();

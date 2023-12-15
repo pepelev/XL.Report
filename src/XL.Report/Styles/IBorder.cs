@@ -2,6 +2,6 @@
 
 public interface IBorder
 {
-    Color Color { get; }
+    ColorWithAlpha? Color { get; }
     BorderStyle Style { get; }
 }

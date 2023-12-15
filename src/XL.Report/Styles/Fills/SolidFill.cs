@@ -1,13 +1,15 @@
-﻿namespace XL.Report.Styles.Fills;
+﻿using System.Xml;
+
+namespace XL.Report.Styles.Fills;
 
 public sealed class SolidFill : Fill, IEquatable<SolidFill>
 {
-    public SolidFill(Color color)
+    public SolidFill(ColorWithAlpha color)
     {
         Color = color;
     }
 
-    public Color Color { get; }
+    public ColorWithAlpha Color { get; }
 
     public bool Equals(SolidFill? other)
     {
@@ -27,6 +29,11 @@ public sealed class SolidFill : Fill, IEquatable<SolidFill>
     public override T Accept<T>(Visitor<T> visitor)
     {
         return visitor.Visit(this);
+    }
+
+    public override void Write(XmlWriter xml)
+    {
+        throw new NotImplementedException();
     }
 
     public override bool Equals(object? obj) => ReferenceEquals(this, obj) || obj is SolidFill other && Equals(other);

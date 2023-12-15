@@ -1,21 +1,18 @@
-﻿namespace XL.Report.Styles.Fills;
+﻿using System.Xml;
+
+namespace XL.Report.Styles.Fills;
 
 public sealed class PatternFill : Fill, IEquatable<PatternFill>
 {
-    public PatternFill(Pattern pattern)
-        : this(pattern, Color.Auto)
-    {
-    }
-
-    public PatternFill(Pattern pattern, Color color, Color? background = null)
+    public PatternFill(Pattern pattern, ColorWithAlpha color, ColorWithAlpha? background = null)
     {
         Pattern = pattern;
         Color = color;
         Background = background;
     }
 
-    public Color Color { get; }
-    public Color? Background { get; }
+    public ColorWithAlpha Color { get; }
+    public ColorWithAlpha? Background { get; }
     public Pattern Pattern { get; }
 
     public bool Equals(PatternFill? other)
@@ -40,6 +37,11 @@ public sealed class PatternFill : Fill, IEquatable<PatternFill>
         return visitor.Visit(this);
     }
 
+    public override void Write(XmlWriter xml)
+    {
+        throw new NotImplementedException();
+    }
+
     public override int GetHashCode()
     {
         unchecked
@@ -56,7 +58,7 @@ public sealed class PatternFill : Fill, IEquatable<PatternFill>
         return $"{Pattern}:({PrintColor(Color)}, {PrintColor(Background)})";
     }
 
-    private static string PrintColor(Color? color)
+    private static string PrintColor(ColorWithAlpha? color)
     {
         return color?.ToString() ?? "null";
     }

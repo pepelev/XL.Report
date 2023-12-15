@@ -1,4 +1,5 @@
 using System.Text;
+using System.Xml;
 
 namespace XL.Report.Styles;
 
@@ -31,6 +32,41 @@ public class Borders : IEquatable<Borders>
         Border.None,
         DiagonalBorders.None
     );
+
+    public void Write(XmlWriter xml)
+    {
+        xml.WriteStartElement(XlsxStructure.Styles.Borders.Border);
+        {
+            // todo
+            xml.WriteStartElement(XlsxStructure.Styles.Borders.Left);
+            xml.WriteEndElement();
+
+            xml.WriteStartElement(XlsxStructure.Styles.Borders.Right);
+            xml.WriteEndElement();
+
+            xml.WriteStartElement(XlsxStructure.Styles.Borders.Top);
+            xml.WriteEndElement();
+
+            xml.WriteStartElement(XlsxStructure.Styles.Borders.Bottom);
+            xml.WriteEndElement();
+
+            xml.WriteStartElement(XlsxStructure.Styles.Borders.Diagonal);
+            xml.WriteEndElement();
+        }
+        xml.WriteEndElement();
+    }
+
+    public static void Write(XmlWriter xml, IEnumerable<Borders> borders)
+    {
+        xml.WriteStartElement(XlsxStructure.Styles.Borders.Collection);
+        {
+            foreach (var border in borders)
+            {
+                border.Write(xml);
+            }
+        }
+        xml.WriteEndElement();
+    }
 
     public bool Equals(Borders? other)
     {

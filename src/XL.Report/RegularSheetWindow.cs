@@ -77,7 +77,7 @@ public sealed class RegularSheetWindow : SheetWindow
             xml.WriteAttributeString(XlsxStructure.Worksheet.Reference, location.ToString());
             if (!StyleId.IsDefault)
             {
-                xml.WriteAttributeString(XlsxStructure.Worksheet.Style, StyleId.AsString());
+                xml.WriteAttributeInt(XlsxStructure.Worksheet.Style, StyleId.Index);
             }
 
             {

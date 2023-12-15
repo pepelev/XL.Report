@@ -1,5 +1,4 @@
 ﻿using System.Globalization;
-using System.Text;
 using System.Xml;
 using static XL.Report.XlsxStructure.Styles;
 
@@ -10,7 +9,7 @@ public sealed class Font : IEquatable<Font>
     public Font(
         string family,
         float size,
-        Color color,
+        Color? color,
         FontStyle style)
     {
         Family = family;
@@ -22,14 +21,14 @@ public sealed class Font : IEquatable<Font>
     public static Font Default { get; } = new(
         "Calibri",
         11,
-        Color.Auto,
+        color: null,
         FontStyle.Regular
     );
 
     public FontStyle Style { get; }
     public string Family { get; }
     public float Size { get; }
-    public Color Color { get; }
+    public Color? Color { get; }
 
     public void Write(XmlWriter xml)
     {
@@ -39,11 +38,10 @@ public sealed class Font : IEquatable<Font>
             xml.WriteAttributeString(Fonts.SizeValue, Size.ToString("N3", CultureInfo.InvariantCulture));
             xml.WriteEndElement();
 
-            if (!Color.IsAuto)
+            if (Color is { } color)
             {
                 xml.WriteStartElement(Fonts.Color);
-                // todo hex is wrong
-                xml.WriteAttributeString(Fonts.ColorRgb, Color.ToHex());
+                xml.WriteAttributeString(Fonts.ColorRgb, color.ToRGBHex());
                 xml.WriteEndElement();
             }
 
@@ -84,20 +82,14 @@ public sealed class Font : IEquatable<Font>
 
     public override string ToString()
     {
-        var builder = new StringBuilder(128);
-        builder.Append(Family);
-        builder.Append(' ');
-        builder.Append(Size);
-        if (Color.IsAuto)
-            builder.Append(" Auto");
-
-        else if (Color != new Color(0, 0, 0))
-            builder.Append(Color.ToHex());
-
-        builder.Append(" ");
-        builder.Append(Style);
-
-        return builder.ToString();
+        var segments = new[]
+        {
+            Family,
+            Size.ToString(CultureInfo.InvariantCulture),
+            Color?.ToString(),
+            Style.ToString()
+        }.Where(segment => !string.IsNullOrWhiteSpace(segment));
+        return string.Join(' ', segments);
     }
 
     public override bool Equals(object? obj)

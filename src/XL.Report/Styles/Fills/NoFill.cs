@@ -1,4 +1,6 @@
-﻿namespace XL.Report.Styles.Fills;
+﻿using System.Xml;
+
+namespace XL.Report.Styles.Fills;
 
 public sealed class NoFill : Fill, IEquatable<NoFill>
 {
@@ -27,5 +29,16 @@ public sealed class NoFill : Fill, IEquatable<NoFill>
     public override T Accept<T>(Visitor<T> visitor)
     {
         return visitor.Visit(this);
+    }
+
+    public override void Write(XmlWriter xml)
+    {
+        xml.WriteStartElement(XlsxStructure.Styles.Fills.Fill);
+        {
+            xml.WriteStartElement(XlsxStructure.Styles.Fills.Pattern);
+            xml.WriteAttributeString(XlsxStructure.Styles.Fills.PatternType, "none");
+            xml.WriteEndElement();
+        }
+        xml.WriteEndElement();
     }
 }

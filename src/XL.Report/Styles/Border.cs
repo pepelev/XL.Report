@@ -2,15 +2,15 @@
 
 public sealed class Border : IEquatable<Border>, IBorder
 {
-    public Border(Color color, BorderStyle style)
+    public Border(BorderStyle style, ColorWithAlpha? color = null)
     {
         Color = color;
         Style = style;
     }
 
-    public static Border None { get; } = new(Color.Auto, BorderStyle.None);
+    public static Border None { get; } = new(BorderStyle.None);
 
-    public Color Color { get; }
+    public ColorWithAlpha? Color { get; }
     public BorderStyle Style { get; }
 
     public bool Equals(Border? other)

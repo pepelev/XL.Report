@@ -54,7 +54,7 @@ public interface IUnit<out T>
     public T Write(SheetWindow window);
 }
 
-public readonly struct StyleId
+public readonly struct StyleId : IComparable<StyleId>
 {
     public int Index { get; }
 
@@ -64,11 +64,11 @@ public readonly struct StyleId
     }
 
     // todo
-    public bool IsDefault => true;
+    public bool IsDefault => Index == 0;
 
-    public string AsString()
+    public int CompareTo(StyleId other)
     {
-        throw new NotImplementedException();
+        return Index.CompareTo(other.Index);
     }
 }
 

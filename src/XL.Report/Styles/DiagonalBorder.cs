@@ -2,7 +2,7 @@
 
 public sealed class DiagonalBorders : IEquatable<DiagonalBorders>, IBorder
 {
-    public DiagonalBorders(BorderStyle style, Color color, bool mainDiagonal, bool antidiagonal)
+    public DiagonalBorders(BorderStyle style, ColorWithAlpha? color, bool mainDiagonal, bool antidiagonal)
     {
         MainDiagonal = mainDiagonal;
         Antidiagonal = antidiagonal;
@@ -10,12 +10,12 @@ public sealed class DiagonalBorders : IEquatable<DiagonalBorders>, IBorder
         Style = style;
     }
 
-    public static DiagonalBorders None { get; } = new(BorderStyle.None, Color.Auto, false, false);
+    public static DiagonalBorders None { get; } = new(BorderStyle.None, color: null, false, false);
 
     public bool MainDiagonal { get; }
     public bool Antidiagonal { get; }
 
-    public Color Color { get; }
+    public ColorWithAlpha? Color { get; }
     public BorderStyle Style { get; }
 
     public bool Equals(DiagonalBorders? other)

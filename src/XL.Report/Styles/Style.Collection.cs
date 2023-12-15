@@ -46,6 +46,16 @@ public sealed partial class Style
                     .ToList();
                 Font.Write(xml, orderedFonts);
 
+                var orderedFills = fills
+                    .OrderBy(font => font.Value)
+                    .Select(pair => pair.Key);
+                Fill.Write(xml, orderedFills);
+
+                var orderedBorders = borders
+                    .OrderBy(font => font.Value)
+                    .Select(pair => pair.Key);
+                Borders.Write(xml, orderedBorders);
+
                 xml.WriteStartElement(CellFormats.StyleFormats);
                 xml.WriteAttributeString(CellFormats.StyleFormatsCount, "1");
                 {
@@ -87,17 +97,17 @@ public sealed partial class Style
 
                         if (fontIndex > 0)
                         {
-                            xml.WriteAttributeString(CellFormats.FontIndex, "1");
+                            xml.WriteAttributeString(CellFormats.ApplyFont, "1");
                         }
 
                         if (fillIndex > 0)
                         {
-                            xml.WriteAttributeString(CellFormats.FillIndex, "1");
+                            xml.WriteAttributeString(CellFormats.ApplyFill, "1");
                         }
 
                         if (bordersIndex > 0)
                         {
-                            xml.WriteAttributeString(CellFormats.BordersIndex, "1");
+                            xml.WriteAttributeString(CellFormats.ApplyBorders, "1");
                         }
 
                         // todo alignment

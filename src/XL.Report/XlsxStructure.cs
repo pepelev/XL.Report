@@ -1,6 +1,3 @@
-using System.Globalization;
-using System.Xml;
-
 namespace XL.Report;
 
 public static class XlsxStructure
@@ -27,7 +24,7 @@ public static class XlsxStructure
             public const string Collection = "fonts";
             public const string CollectionCount = "count";
             public const string Font = "font";
-            public const string Size = "size";
+            public const string Size = "sz";
             public const string SizeValue = "val";
             public const string Color = "color";
             public const string ColorRgb = "rgb";
@@ -39,6 +36,25 @@ public static class XlsxStructure
             public const string CharsetValue = "val";
             public const string Scheme = "minor";
             public const string SchemeValue = "val";
+        }
+
+        public static class Fills
+        {
+            public const string Collection = "fills";
+            public const string Fill = "fill";
+            public const string Pattern = "patternFill";
+            public const string PatternType = "patternType";
+        }
+
+        public static class Borders
+        {
+            public const string Collection = "borders";
+            public const string Border = "border";
+            public const string Left = "left";
+            public const string Right = "right";
+            public const string Top = "top";
+            public const string Bottom = "bottom";
+            public const string Diagonal = "diagonal";
         }
 
         public static class CellFormats
@@ -62,13 +78,5 @@ public static class XlsxStructure
             public const string ApplyBorders = "applyBorder";
             public const string ApplyAlignment = "applyAlignment";
         }
-    }
-}
-
-internal static class XmlExtensions
-{
-    public static void WriteAttributeInt(this XmlWriter xml, string name, int value)
-    {
-        xml.WriteAttributeString(name, value.ToString(CultureInfo.InvariantCulture));
     }
 }

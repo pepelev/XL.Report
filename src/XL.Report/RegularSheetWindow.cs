@@ -1,4 +1,5 @@
 using System.Xml;
+using XL.Report.Styles;
 
 namespace XL.Report;
 
@@ -40,44 +41,45 @@ public sealed class RegularSheetWindow : SheetWindow
         ? Offset.Zero
         : moves.Peek();
 
-    public override void Place(Offset offset, Content content, StyleId styleId)
+    public override void Place(Content content, StyleId? styleId)
     {
         if (Range.IsEmpty)
         {
             throw new InvalidOperationException();
         }
 
-        placed[offset + CurrentOffset] = new Cell(content, styleId);
+        placed[CurrentOffset] = new Cell(content, styleId);
     }
 
-    public override void Merge(Offset offset, Size size, Content content, StyleId styleId)
+    public override void Merge(Size size, Content content, StyleId? styleId)
     {
         // todo check range can contain
         
         throw new NotImplementedException();
     }
 
-    public override void PushMove(Offset offset)
+    public override void PushReduce(Offset offset, Size? newSize = null)
     {
+        // todo use newSize
         // todo check offset moves to right or bottom
-        
+
         moves.Push(CurrentOffset + offset);
     }
 
-    public override void PopMove()
+    public override void PopReduce()
     {
         moves.Pop();
     }
 
-    public readonly record struct Cell(Content Content, StyleId StyleId)
+    public readonly record struct Cell(Content Content, StyleId? StyleId)
     {
         public void Write(XmlWriter xml, Location location)
         {
             xml.WriteStartElement(XlsxStructure.Worksheet.Cell);
             xml.WriteAttributeString(XlsxStructure.Worksheet.Reference, location.ToString());
-            if (!StyleId.IsDefault)
+            if (StyleId is { } styleId)
             {
-                xml.WriteAttributeInt(XlsxStructure.Worksheet.Style, StyleId.Index);
+                xml.WriteAttributeInt(XlsxStructure.Worksheet.Style, styleId.Index);
             }
 
             {

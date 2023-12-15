@@ -10,10 +10,14 @@ public sealed class Tests
 {
     /*
         "_rels/.rels" -> "xl/workbook.xml"
+        "_rels/.rels" -> "xl/styles.xml"
         "[Content_Types].xml" -> "xl/workbook.xml"
         "xl/workbook.xml" -> "xl/worksheets/sheet1.xml"
         "[Content_Types].xml" -> "xl/worksheets/sheet1.xml"
+        "[Content_Types].xml" -> "xl/styles.xml"
+        "xl/styles.xml" -> "xl/worksheets/sheet1.xml"
         "xl/_rels/workbook.xml.rels" -> "xl/worksheets/sheet1.xml"
+
         todo add
         - styles,
         - Book class,
@@ -26,9 +30,42 @@ public sealed class Tests
      */
 
     [Test]
+    public async Task Book_Proto()
+    {
+        await using var book = new StreamBook(
+            new FileStream("D:/archives/test-book.xlsx", FileMode.Create),
+            CompressionLevel.Optimal,
+            leaveOpen: false
+        );
+
+        await using (var sheet = book.OpenSheet("Prototype"))
+        {
+            var bigRed = new Style(
+                new Appearance(
+                    Alignment.Default,
+                    new Font("Times New Roman", 40, new Color(255, 100, 15), FontStyle.Regular),
+                    Fill.No,
+                    Borders.None
+                ),
+                Format.General
+            );
+            var row = new Row(
+                new Cell(new InlineString("Hello world!")),
+                new Cell(new Number(509), book.Styles.Register(bigRed))
+            );
+
+            await sheet.WriteRowAsync(row).ConfigureAwait(false);
+            await sheet.WriteRowAsync(row).ConfigureAwait(false);
+            await sheet.CompleteAsync().ConfigureAwait(false);
+        }
+
+        await book.CompleteAsync().ConfigureAwait(false);
+    }
+
+    [Test]
     public void Test1()
     {
-        var window = new RegularSheetWindow(Range.Whole);
+        var window = new RegularSheetWindow(Range.EntireSheet);
         var styles = new Style.Collection();
 
         var bigRed = new Style(

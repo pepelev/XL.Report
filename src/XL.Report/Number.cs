@@ -1,4 +1,5 @@
 using System.Xml;
+using XL.Report.Styles;
 
 namespace XL.Report;
 
@@ -54,24 +55,6 @@ public interface IUnit<out T>
     public T Write(SheetWindow window);
 }
 
-public readonly struct StyleId : IComparable<StyleId>
-{
-    public int Index { get; }
-
-    public StyleId(int index)
-    {
-        Index = index;
-    }
-
-    // todo
-    public bool IsDefault => Index == 0;
-
-    public int CompareTo(StyleId other)
-    {
-        return Index.CompareTo(other.Index);
-    }
-}
-
 public readonly struct Row : IUnit<Size>
 {
     private readonly IUnit<Size>[] units;
@@ -87,9 +70,9 @@ public readonly struct Row : IUnit<Size>
         var maxHeight = 0;
         foreach (var unit in units ?? Array.Empty<IUnit<Size>>())
         {
-            window.PushMove(new Offset(offset, 0));
+            window.PushReduce(new Offset(offset, 0));
             var size = unit.Write(window);
-            window.PopMove();
+            window.PopReduce();
             offset += size.Width;
             maxHeight = Math.Max(maxHeight, size.Height);
         }
@@ -101,9 +84,9 @@ public readonly struct Row : IUnit<Size>
 public readonly struct Cell : IUnit<Location>, IUnit<Size>
 {
     private readonly Content content;
-    private readonly StyleId styleId;
+    private readonly StyleId? styleId;
 
-    public Cell(Content content, StyleId styleId)
+    public Cell(Content content, StyleId? styleId = null)
     {
         this.content = content;
         this.styleId = styleId;
@@ -111,7 +94,7 @@ public readonly struct Cell : IUnit<Location>, IUnit<Size>
 
     public Location Write(SheetWindow window)
     {
-        window.Place(Offset.Zero, content, styleId);
+        window.Place(content, styleId);
         return window.Range.LeftTopCell;
     }
 
@@ -126,9 +109,9 @@ public readonly struct Merge : IUnit<Range>
 {
     private readonly Content content;
     private readonly Size size;
-    private readonly StyleId styleId;
+    private readonly StyleId? styleId;
 
-    public Merge(Content content, Size size, StyleId styleId)
+    public Merge(Content content, Size size, StyleId? styleId = null)
     {
         this.content = content;
         this.size = size;
@@ -137,7 +120,7 @@ public readonly struct Merge : IUnit<Range>
 
     public Range Write(SheetWindow window)
     {
-        window.Merge(Offset.Zero, size, content, styleId);
+        window.Merge(size, content, styleId);
         return new Range(window.Range.LeftTopCell, size);
     }
 }

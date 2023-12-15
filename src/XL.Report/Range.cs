@@ -4,7 +4,7 @@ public readonly struct Range : IEquatable<Range>, IParsable<Range>
 {
     public override string ToString() => $"{LeftTopCell}:{RightBottomCell}";
 
-    public static Range Whole => new Range(
+    public static Range EntireSheet => new(
         new Location(Location.MinX, Location.MinY),
         new Size(
             Location.MaxX - Location.MinX + 1,
@@ -114,6 +114,19 @@ public readonly struct Range : IEquatable<Range>, IParsable<Range>
     private int BottomHeight => Size.Height >> 1;
     private int LeftWidth => (Size.Width + 1) >> 1;
     private int RightWidth => Size.Width >> 1;
+
+    public Range ReduceDown(int offset)
+    {
+        if (Size.Height < offset)
+        {
+            throw new InvalidOperationException();
+        }
+
+        return new Range(
+            LeftTopCell + new Offset(0, offset),
+            Size - new Offset(0, offset)
+        );
+    }
 
     public Range SplitLeftTop()
     {

@@ -22,7 +22,6 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
             Indent = true,
             Encoding = Encoding.UTF8,
             NewLineChars = "\n",
-            Async = true,
             CloseOutput = true
         };
         xml = XmlWriter.Create(stream, settings);
@@ -82,7 +81,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         reductions.Pop();
     }
 
-    public async Task FlushAsync()
+    public void Flush()
     {
         int Write()
         {
@@ -115,8 +114,6 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         WriteStartOnlyFirstTime();
         var mostDownY = Write();
         var newActiveRange = activeRange.ReduceDown(mostDownY + 1 - activeRange.LeftTop.Y);
-        // todo continueOnCapturedContext
-        await xml.FlushAsync().ConfigureAwait(false);
 
         activeRange = newActiveRange;
         placed.Clear();
@@ -183,12 +180,10 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         started = true;
     }
 
-    public async Task CompleteAsync()
+    public void Complete()
     {
         WriteStartOnlyFirstTime();
-        // todo continueOnCapturedContext
-        await xml.WriteEndDocumentAsync().ConfigureAwait(false);
-        await xml.FlushAsync().ConfigureAwait(false);
+        xml.WriteEndDocument();
     }
 
     public readonly record struct Cell(Content Content, StyleId? StyleId)

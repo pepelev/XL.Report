@@ -21,25 +21,25 @@ public sealed class Examples
     );
 
     [Test]
-    public async Task Simplest_Book()
+    public void Simplest_Book()
     {
-        await using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
-        await using (var sheet = book.OpenSheet(TestName, SheetOptions.Default))
+        using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
+        using (var sheet = book.OpenSheet(TestName, SheetOptions.Default))
         {
             IUnit<Location> cell = new Cell(new Number(42));
-            await sheet.WriteRowAsync(cell).ConfigureAwait(false);
-            await sheet.CompleteAsync().ConfigureAwait(false);
+            sheet.WriteRow(cell);
+            sheet.Complete();
         }
 
-        await book.CompleteAsync().ConfigureAwait(false);
+        book.Complete();
     }
 
     [Test]
-    public async Task Font_Styling()
+    public void Font_Styling()
     {
-        await using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
+        using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
         var styles = book.Styles;
-        await using (var sheet = book.OpenSheet(TestName, SheetOptions.Default))
+        using (var sheet = book.OpenSheet(TestName, SheetOptions.Default))
         {
             var times = Style.Default.WithFontFamily("Times New Roman");
             var row = new Row(
@@ -61,42 +61,42 @@ public sealed class Examples
                 )
             );
 
-            await sheet.WriteRowAsync(row).ConfigureAwait(false);
-            await sheet.CompleteAsync().ConfigureAwait(false);
+            sheet.WriteRow(row);
+            sheet.Complete();
         }
 
-        await book.CompleteAsync().ConfigureAwait(false);
+        book.Complete();
     }
 
     [Test]
-    public async Task Multiple_Sheets()
+    public void Multiple_Sheets()
     {
-        await using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
+        using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
 
         for (var i = 0; i < 10; i++)
         {
-            await using var sheet = book.OpenSheet($"{TestName} {i + 1}", SheetOptions.Default);
+            using var sheet = book.OpenSheet($"{TestName} {i + 1}", SheetOptions.Default);
             var row = new Row(
                 new Cell(new InlineString("Sheet index:")),
                 new Cell(new Number(i))
             );
-            await sheet.WriteRowAsync(row).ConfigureAwait(false);
-            await sheet.CompleteAsync().ConfigureAwait(false);
+            sheet.WriteRow(row);
+            sheet.Complete();
         }
 
-        await book.CompleteAsync().ConfigureAwait(false);
+        book.Complete();
     }
 
     [Test]
-    public async Task Large()
+    public void Large()
     {
         var random = new Random(592739);
         var styles = Array(64, RandomStyle);
         var contents = Array(1024, RandomWord);
 
-        await using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
+        using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
 
-        await using (var sheet = book.OpenSheet(TestName, SheetOptions.Default))
+        using (var sheet = book.OpenSheet(TestName, SheetOptions.Default))
         {
             for (var i = 0; i < 100_000; i++)
             {
@@ -109,13 +109,13 @@ public sealed class Examples
                     ) as IUnit<Range>
                 );
                 var row = new Row(cells);
-                await sheet.WriteRowAsync(row).ConfigureAwait(false);
+                sheet.WriteRow(row);
             }
 
-            await sheet.CompleteAsync().ConfigureAwait(false);
+            sheet.Complete();
         }
 
-        await book.CompleteAsync().ConfigureAwait(false);
+        book.Complete();
 
         Style RandomStyle()
         {

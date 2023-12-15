@@ -11,11 +11,9 @@ public sealed class StreamBook : Book
 {
     private readonly ZipArchive archive;
     private readonly CompressionLevel compressionLevel;
-    private readonly bool continueOnCapturedContext;
-    private readonly Stream output;
     private readonly List<StreamSheetBuilder> sheets = new();
 
-    public StreamBook(Stream output, CompressionLevel compressionLevel, bool leaveOpen, bool continueOnCapturedContext = false)
+    public StreamBook(Stream output, CompressionLevel compressionLevel, bool leaveOpen)
         : this(
             output,
             new BoundedSharedStrings(
@@ -24,8 +22,7 @@ public sealed class StreamBook : Book
                 64 * 1024 * 16
             ),
             compressionLevel,
-            leaveOpen,
-            continueOnCapturedContext)
+            leaveOpen)
     {
     }
 
@@ -33,21 +30,17 @@ public sealed class StreamBook : Book
         Stream output,
         SharedStrings sharedStrings,
         CompressionLevel compressionLevel,
-        bool leaveOpen,
-        bool continueOnCapturedContext = false)
+        bool leaveOpen)
     {
-        this.output = output;
         Strings = sharedStrings;
         this.compressionLevel = compressionLevel;
-        this.continueOnCapturedContext = continueOnCapturedContext;
         archive = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen);
     }
 
     public override Style.Collection Styles { get; } = new();
     public override SharedStrings Strings { get; }
 
-    // todo make sync
-    public override async ValueTask DisposeAsync()
+    public override void Dispose()
     {
         archive.Dispose();
     }
@@ -58,7 +51,7 @@ public sealed class StreamBook : Book
 
         var path = new SheetPath(sheets.Count);
         var entry = archive.CreateEntry(path.AsString(), compressionLevel);
-        var builder = new StreamSheetBuilder(path, name, entry, options, continueOnCapturedContext);
+        var builder = new StreamSheetBuilder(path, name, entry, options);
         sheets.Add(builder);
         return builder;
     }
@@ -71,30 +64,29 @@ public sealed class StreamBook : Book
         }
     }
 
-    public override async Task CompleteAsync()
+    public override void Complete()
     {
         EnsureThereIsNoCurrentSheet();
 
-        await WriteAsync("xl/workbook.xml", Workbook).ConfigureAwait(continueOnCapturedContext);
-        await WriteAsync("xl/styles.xml", Styles.Write).ConfigureAwait(continueOnCapturedContext);
-        await WriteAsync("xl/sharedStrings.xml", SharedStrings).ConfigureAwait(continueOnCapturedContext);
-        await WriteAsync("[Content_Types].xml", ContentTypes).ConfigureAwait(continueOnCapturedContext);
-        await WriteAsync("_rels/.rels", Rels).ConfigureAwait(continueOnCapturedContext);
-        await WriteAsync("xl/_rels/workbook.xml.rels", WorkbookRels).ConfigureAwait(continueOnCapturedContext);
+        Write("xl/workbook.xml", Workbook);
+        Write("xl/styles.xml", Styles.Write);
+        Write("xl/sharedStrings.xml", SharedStrings);
+        Write("[Content_Types].xml", ContentTypes);
+        Write("_rels/.rels", Rels);
+        Write("xl/_rels/workbook.xml.rels", WorkbookRels);
     }
 
-    private async Task WriteAsync(string name, Action<XmlWriter> act)
+    private void Write(string name, Action<XmlWriter> act)
     {
         var entry = archive.CreateEntry(name, compressionLevel);
-        await using var stream = entry.Open();
+        using var stream = entry.Open();
         var settings = new XmlWriterSettings
         {
             Indent = true,
             Encoding = Encoding.UTF8,
-            NewLineChars = "\n",
-            Async = true
+            NewLineChars = "\n"
         };
-        await using var xml = XmlWriter.Create(stream, settings);
+        using var xml = XmlWriter.Create(stream, settings);
         act(xml);
     }
 
@@ -269,7 +261,6 @@ public sealed class StreamBook : Book
 
     private sealed class StreamSheetBuilder : SheetBuilder
     {
-        private readonly bool continueOnCapturedContext;
         private readonly Stream entryStream;
         private readonly StreamSheetWindow window;
         private volatile bool open = true;
@@ -278,12 +269,10 @@ public sealed class StreamBook : Book
             SheetPath path,
             string name,
             ZipArchiveEntry entry,
-            SheetOptions options,
-            bool continueOnCapturedContext)
+            SheetOptions options)
         {
             Path = path;
             Name = name;
-            this.continueOnCapturedContext = continueOnCapturedContext;
             entryStream = entry.Open();
             window = new StreamSheetWindow(entryStream, options);
         }
@@ -295,23 +284,22 @@ public sealed class StreamBook : Book
         // todo add checks
         public override string Name { get; set; }
 
-        public override async ValueTask DisposeAsync()
+        public override void Dispose()
         {
-            // todo decide use sync dispose or async for xml
             open = false;
             window.Dispose();
         }
 
-        public override async Task<T> WriteRowAsync<T>(IUnit<T> unit)
+        public override T WriteRow<T>(IUnit<T> unit)
         {
             var result = unit.Write(window);
-            await window.FlushAsync().ConfigureAwait(continueOnCapturedContext);
+            window.Flush();
             return result;
         }
 
-        public override async Task CompleteAsync()
+        public override void Complete()
         {
-            await window.CompleteAsync().ConfigureAwait(false);
+            window.Complete();
         }
     }
 }

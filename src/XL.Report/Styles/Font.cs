@@ -1,4 +1,7 @@
-﻿using System.Text;
+﻿using System.Globalization;
+using System.Text;
+using System.Xml;
+using static XL.Report.XlsxStructure.Styles;
 
 namespace XL.Report.Styles;
 
@@ -8,8 +11,7 @@ public sealed class Font : IEquatable<Font>
         string family,
         float size,
         Color color,
-        FontStyle style
-    )
+        FontStyle style)
     {
         Family = family;
         Size = size;
@@ -29,6 +31,44 @@ public sealed class Font : IEquatable<Font>
     public float Size { get; }
     public Color Color { get; }
 
+    public void Write(XmlWriter xml)
+    {
+        xml.WriteStartElement(Fonts.Font);
+        {
+            xml.WriteStartElement(Fonts.Size);
+            xml.WriteAttributeString(Fonts.SizeValue, Size.ToString("N3", CultureInfo.InvariantCulture));
+            xml.WriteEndElement();
+
+            if (!Color.IsAuto)
+            {
+                xml.WriteStartElement(Fonts.Color);
+                // todo hex is wrong
+                xml.WriteAttributeString(Fonts.ColorRgb, Color.ToHex());
+                xml.WriteEndElement();
+            }
+
+            xml.WriteStartElement(Fonts.Name);
+            xml.WriteAttributeString(Fonts.NameValue, Family);
+            xml.WriteEndElement();
+
+            // todo write Style
+        }
+        xml.WriteEndElement();
+    }
+
+    public static void Write(XmlWriter xml, IReadOnlyCollection<Font> fonts)
+    {
+        xml.WriteStartElement(Fonts.Collection);
+        xml.WriteAttributeString(Fonts.CollectionCount, fonts.Count.ToString(CultureInfo.InvariantCulture));
+        {
+            foreach (var font in fonts)
+            {
+                font.Write(xml);
+            }
+        }
+        xml.WriteEndElement();
+    }
+
     public bool Equals(Font? other)
     {
         if (ReferenceEquals(null, other))
@@ -46,7 +86,7 @@ public sealed class Font : IEquatable<Font>
     {
         var builder = new StringBuilder(128);
         builder.Append(Family);
-        builder.Append(" ");
+        builder.Append(' ');
         builder.Append(Size);
         if (Color.IsAuto)
             builder.Append(" Auto");

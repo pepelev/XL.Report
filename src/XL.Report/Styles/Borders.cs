@@ -9,8 +9,7 @@ public class Borders : IEquatable<Borders>
         Border right,
         Border top,
         Border bottom,
-        DiagonalBorders diagonal
-    )
+        DiagonalBorders diagonal)
     {
         Left = left ?? throw new ArgumentNullException(nameof(left));
         Right = right ?? throw new ArgumentNullException(nameof(right));

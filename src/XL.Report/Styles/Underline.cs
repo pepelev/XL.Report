@@ -1,6 +1,6 @@
 ﻿namespace XL.Report.Styles;
 
-public enum Underline
+public enum Underline : byte
 {
     Single,
     SingleByCell,

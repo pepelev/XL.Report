@@ -8,8 +8,7 @@ public sealed class Appearance : IEquatable<Appearance>
         Alignment alignment,
         Font font,
         Fill fill,
-        Borders borders
-    )
+        Borders borders)
     {
         Alignment = alignment ?? throw new ArgumentNullException(nameof(alignment));
         Font = font ?? throw new ArgumentNullException(nameof(font));

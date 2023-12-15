@@ -2,7 +2,7 @@
 
 namespace XL.Report.Styles;
 
-public struct FontStyle : IEquatable<FontStyle>
+public readonly struct FontStyle : IEquatable<FontStyle>
 {
     private const ushort UnderlineMask = 0x7F;
     private const ushort UnderlineNullBit = 0x80;

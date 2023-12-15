@@ -56,6 +56,13 @@ public interface IUnit<out T>
 
 public readonly struct StyleId
 {
+    public int Index { get; }
+
+    public StyleId(int index)
+    {
+        Index = index;
+    }
+
     // todo
     public bool IsDefault => true;
 

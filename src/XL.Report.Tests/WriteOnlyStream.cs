@@ -18,7 +18,7 @@ public sealed class WriteOnlyStream : Stream
     public override async ValueTask DisposeAsync()
     {
         await stream.DisposeAsync().ConfigureAwait(false);
-        await stream.DisposeAsync();
+        await stream.DisposeAsync().ConfigureAwait(false);
     }
 
     public override async Task FlushAsync(CancellationToken cancellationToken)

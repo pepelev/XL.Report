@@ -45,6 +45,8 @@ public readonly struct Range : IEquatable<Range>, IParsable<Range>
     public Location LeftTopCell { get; }
     public Size Size { get; }
 
+    public bool IsEmpty => Size.Width == 0 || Size.Height == 0;
+
     public Location RightBottomCell => new(
         LeftTopCell.X + (int)Size.Width - 1,
         LeftTopCell.Y + (int)Size.Height - 1

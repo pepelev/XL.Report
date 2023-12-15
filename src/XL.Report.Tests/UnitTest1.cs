@@ -6,11 +6,21 @@ namespace XL.Report.Tests;
 
 public sealed class Tests
 {
+    /*
+        "_rels/.rels" -> "xl/workbook.xml"
+        "[Content_Types].xml" -> "xl/workbook.xml"
+        "xl/workbook.xml" -> "xl/worksheets/sheet1.xml"
+        "[Content_Types].xml" -> "xl/worksheets/sheet1.xml"
+        "xl/_rels/workbook.xml.rels" -> "xl/worksheets/sheet1.xml"
+        todo add sharedStrings, styles
+        todo unit, newSheet, flush-all
+     */
+
     [Test]
     public void Test1()
     {
         var canvas = new RegularCanvas(Range.Whole);
-        canvas.Place(Offset.Zero, new Number(444), null);
+        canvas.Place(Offset.Zero, new InlineString("Hello world!"), null);
 
         using var archive = new ZipArchive(
             new FileStream("D:/archives/test.xlsx", FileMode.Create),
@@ -31,7 +41,8 @@ public sealed class Tests
             {
                 Indent = true,
                 Encoding = Encoding.UTF8,
-                NewLineChars = "\n"
+                NewLineChars = "\n",
+                Async = true
             };
             using var xml = XmlWriter.Create(stream, settings);
             act(xml);
@@ -59,7 +70,7 @@ public sealed class Tests
 
     private static void Sheet(XmlWriter xml, RegularCanvas canvas)
     {
-        xml.WriteStartDocument(standalone: true);
+        xml.WriteStartDocumentAsync(standalone: true);
         {
             xml.WriteStartElement("worksheet", ns: "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
             // xml.WriteAttributeString("xmlns", "");

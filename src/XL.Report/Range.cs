@@ -48,18 +48,18 @@ public readonly struct Range : IEquatable<Range>, IParsable<Range>
     public bool IsEmpty => Size.Width == 0 || Size.Height == 0;
 
     public Location RightBottomCell => new(
-        LeftTopCell.X + (int)Size.Width - 1,
-        LeftTopCell.Y + (int)Size.Height - 1
+        LeftTopCell.X + Size.Width - 1,
+        LeftTopCell.Y + Size.Height - 1
     );
 
     public Location RightTopCell => new(
-        LeftTopCell.X + (int)Size.Width - 1,
+        LeftTopCell.X + Size.Width - 1,
         LeftTopCell.Y
     );
 
     public Location LeftBottomCell => new(
         LeftTopCell.X,
-        LeftTopCell.Y + (int)Size.Height - 1
+        LeftTopCell.Y + Size.Height - 1
     );
 
     public bool Intersects(in Range range)
@@ -91,12 +91,12 @@ public readonly struct Range : IEquatable<Range>, IParsable<Range>
 
         if (Location.TryParse(parts[0], formatProvider, out var topLeft) && Location.TryParse(parts[1], formatProvider, out var bottomRight))
         {
-            var size = new Size((uint) (bottomRight.X - topLeft.X + 1), (uint) (bottomRight.Y - topLeft.Y + 1));
+            var size = new Size( bottomRight.X - topLeft.X + 1, bottomRight.Y - topLeft.Y + 1);
             result = new Range(topLeft, size);
             return true;
         }
 
-        result = default(Range);
+        result = default;
         return false;
     }
 
@@ -110,10 +110,10 @@ public readonly struct Range : IEquatable<Range>, IParsable<Range>
         throw new ArgumentException();
     }
 
-    private uint TopHeight => (Size.Height + 1) >> 1;
-    private uint BottomHeight => Size.Height >> 1;
-    private uint LeftWidth => (Size.Width + 1) >> 1;
-    private uint RightWidth => Size.Width >> 1;
+    private int TopHeight => (Size.Height + 1) >> 1;
+    private int BottomHeight => Size.Height >> 1;
+    private int LeftWidth => (Size.Width + 1) >> 1;
+    private int RightWidth => Size.Width >> 1;
 
     public Range SplitLeftTop()
     {
@@ -123,21 +123,21 @@ public readonly struct Range : IEquatable<Range>, IParsable<Range>
     public Range SplitRightTop()
     {
         return new Range(
-            new Location(LeftTopCell.X + (int) LeftWidth, LeftTopCell.Y),
+            new Location(LeftTopCell.X + LeftWidth, LeftTopCell.Y),
             new Size(RightWidth, TopHeight));
     }
 
     public Range SplitLeftBottom()
     {
         return new Range(
-            new Location(LeftTopCell.X, LeftTopCell.Y + (int) TopHeight),
+            new Location(LeftTopCell.X, LeftTopCell.Y + TopHeight),
             new Size(LeftWidth, BottomHeight));
     }
 
     public Range SplitRightBottom()
     {
         return new Range(
-            new Location(LeftTopCell.X + (int) LeftWidth, LeftTopCell.Y + (int) TopHeight),
+            new Location(LeftTopCell.X + LeftWidth, LeftTopCell.Y + TopHeight),
             new Size(RightWidth, BottomHeight));
     }
 

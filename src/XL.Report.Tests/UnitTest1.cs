@@ -12,22 +12,35 @@ public sealed class Tests
         "xl/workbook.xml" -> "xl/worksheets/sheet1.xml"
         "[Content_Types].xml" -> "xl/worksheets/sheet1.xml"
         "xl/_rels/workbook.xml.rels" -> "xl/worksheets/sheet1.xml"
-        todo add sharedStrings, styles
-        todo unit, newSheet, flush-all
+        todo add
+        - styles,
+        - Book class,
+        - flush rows,
+        - imperative-programing(new sheet, print),
+        - conditional-formatting,
+        - hyper-links,
+        - sharedStrings,
+        - закрепление областей
      */
 
     [Test]
     public void Test1()
     {
-        var canvas = new RegularCanvas(Range.Whole);
-        canvas.Place(Offset.Zero, new InlineString("Hello world!"), null);
+        var window = new RegularSheetWindow(Range.Whole);
+
+        var row = new Row(
+            new Cell(new InlineString("Hello world!"), new StyleId()),
+            new Cell(new Number(509), new StyleId())
+        );
+
+        row.Write(window);
 
         using var archive = new ZipArchive(
             new FileStream("D:/archives/test.xlsx", FileMode.Create),
             ZipArchiveMode.Create
         );
 
-        Write("xl/worksheets/sheet1.xml", xml => Sheet(xml, canvas));
+        Write("xl/worksheets/sheet1.xml", xml => Sheet(xml, window));
         Write("xl/workbook.xml", xml => Workbook(xml, "Щит1"));
         Write("[Content_Types].xml", ContentTypes);
         Write("_rels/.rels", Rels);
@@ -35,7 +48,7 @@ public sealed class Tests
 
         void Write(string name, Action<XmlWriter> act)
         {
-            var entry = archive.CreateEntry(name, CompressionLevel.NoCompression);
+            var entry = archive.CreateEntry(name, CompressionLevel.Optimal);
             using var stream = entry.Open();
             var settings = new XmlWriterSettings
             {
@@ -61,14 +74,14 @@ public sealed class Tests
             }
         ))
         {
-            Sheet(xml, canvas);
+            Sheet(xml, window);
         }
 
         var s = Encoding.UTF8.GetString(stream.ToArray());
         Console.WriteLine(s);
     }
 
-    private static void Sheet(XmlWriter xml, RegularCanvas canvas)
+    private static void Sheet(XmlWriter xml, RegularSheetWindow window)
     {
         xml.WriteStartDocumentAsync(standalone: true);
         {
@@ -81,9 +94,9 @@ public sealed class Tests
             {
                 xml.WriteStartElement("sheetData");
                 {
-                    foreach (var row in canvas.Rows)
+                    foreach (var row in window.Rows)
                     {
-                        xml.WriteStartElement("row");
+                        xml.WriteStartElement(XlsxStructure.Worksheet.Row);
                         xml.WriteStartAttribute("r");
                         xml.WriteValue(row.Y);
                         {

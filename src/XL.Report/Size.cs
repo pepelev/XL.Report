@@ -1,5 +1,6 @@
 namespace XL.Report;
 
+// todo make int
 public readonly struct Size : IEquatable<Size>
 {
     public override string ToString()
@@ -15,14 +16,14 @@ public readonly struct Size : IEquatable<Size>
 
     public bool IsCell => this == Cell;
 
-    public Size(uint width, uint height)
+    public Size(int width, int height)
     {
         Width = width;
         Height = height;
     }
 
-    public uint Width { get; }
-    public uint Height { get; }
+    public int Width { get; }
+    public int Height { get; }
 
     public bool Equals(Size other)
     {
@@ -41,12 +42,12 @@ public readonly struct Size : IEquatable<Size>
     {
         unchecked
         {
-            return ((int) Width * 397) ^ (int) Height;
+            return (Width * 397) ^ Height;
         }
     }
 
-    public ulong GetArea()
+    public long GetArea()
     {
-        return (ulong)Width * Height;
+        return (long)Width * Height;
     }
 }

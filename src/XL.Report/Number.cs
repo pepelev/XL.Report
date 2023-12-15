@@ -2,8 +2,7 @@ using System.Xml;
 
 namespace XL.Report;
 
-// todo make struct
-public sealed class InlineString : IContent
+public sealed class InlineString : Content
 {
     private readonly string content;
 
@@ -12,13 +11,9 @@ public sealed class InlineString : IContent
         this.content = content;
     }
 
-    public void Write(XmlWriter xml, StyleId styleId)
+    public override void Write(XmlWriter xml)
     {
-        throw new NotImplementedException();
-    }
-
-    public void Write(XmlWriter xml)
-    {
+        // todo extract to consts
         xml.WriteAttributeString("t", "inlineStr");
         xml.WriteStartElement("is");
         {
@@ -32,11 +27,9 @@ public sealed class InlineString : IContent
     }
 }
 
-// todo make struct
 public sealed class Number : Content
 {
-    private const string cell = "c";
-    private const string reference = "r";
+    // todo extract to consts
     private const string value = "v";
 
     private readonly long content;
@@ -44,11 +37,6 @@ public sealed class Number : Content
     public Number(long content)
     {
         this.content = content;
-    }
-
-    public override void Write(XmlWriter xml, StyleId styleId)
-    {
-        
     }
 
     public override void Write(XmlWriter xml)
@@ -59,40 +47,17 @@ public sealed class Number : Content
         }
         xml.WriteEndElement();
     }
-
-    public override void Write(XmlWriter xml, Location location)
-    {
-        xml.WriteStartElement(cell);
-        xml.WriteStartAttribute(reference);
-        // todo location can be incorrect
-        xml.WriteValue(location.ToString());
-        xml.WriteEndAttribute();
-        {
-            xml.WriteStartElement(value);
-            {
-                xml.WriteValue(content);
-            }
-            xml.WriteEndElement();
-        }
-        xml.WriteEndElement();
-    }
 }
 
 public interface IUnit<out T>
 {
-    public T Write(XmlWriter xml, Canvas canvas);
-}
-
-public interface IContent
-{
-    void Write(XmlWriter xml, StyleId styleId);
-    void Write(XmlWriter xml);
+    public T Write(SheetWindow window);
 }
 
 public readonly struct StyleId
 {
     // todo
-    public bool IsDefault => false;
+    public bool IsDefault => true;
 
     public string AsString()
     {
@@ -100,38 +65,72 @@ public readonly struct StyleId
     }
 }
 
-public sealed class Cell : IUnit<Location>
+public readonly struct Row : IUnit<Size>
 {
-    // todo extract to separate class
-    private const string cell = "c";
-    private const string reference = "r";
-    private const string styleName = "s";
+    private readonly IUnit<Size>[] units;
 
-    private readonly IContent content;
-    private readonly Style style;
-    private readonly Style.Collection styles;
-
-    public Location Write(XmlWriter xml, Canvas canvas)
+    public Row(params IUnit<Size>[] units)
     {
-        var range = canvas.Range;
-        if (range.IsEmpty)
+        this.units = units;
+    }
+
+    public Size Write(SheetWindow window)
+    {
+        var offset = 0;
+        var maxHeight = 0;
+        foreach (var unit in units ?? Array.Empty<IUnit<Size>>())
         {
-            throw new InvalidOperationException();
+            window.PushMove(new Offset(offset, 0));
+            var size = unit.Write(window);
+            window.PopMove();
+            offset += size.Width;
+            maxHeight = Math.Max(maxHeight, size.Height);
         }
 
-        var location = range.LeftTopCell;
+        return new Size(offset, maxHeight);
+    }
+}
 
-        xml.WriteStartElement(cell);
-        xml.WriteAttributeString(reference, location.ToString());
+public readonly struct Cell : IUnit<Location>, IUnit<Size>
+{
+    private readonly Content content;
+    private readonly StyleId styleId;
 
-        var styleId = styles.Register(style);
-        if (!styleId.IsDefault)
-        {
-            xml.WriteAttributeString(styleName, styleId.AsString());
-        }
+    public Cell(Content content, StyleId styleId)
+    {
+        this.content = content;
+        this.styleId = styleId;
+    }
 
-        content.Write(xml);
-        xml.WriteEndElement();
-        return location;
+    public Location Write(SheetWindow window)
+    {
+        window.Place(Offset.Zero, content, styleId);
+        return window.Range.LeftTopCell;
+    }
+
+    Size IUnit<Size>.Write(SheetWindow window)
+    {
+        Write(window);
+        return Size.Cell;
+    }
+}
+
+public readonly struct Merge : IUnit<Range>
+{
+    private readonly Content content;
+    private readonly Size size;
+    private readonly StyleId styleId;
+
+    public Merge(Content content, Size size, StyleId styleId)
+    {
+        this.content = content;
+        this.size = size;
+        this.styleId = styleId;
+    }
+
+    public Range Write(SheetWindow window)
+    {
+        window.Merge(Offset.Zero, size, content, styleId);
+        return new Range(window.Range.LeftTopCell, size);
     }
 }

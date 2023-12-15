@@ -13,16 +13,15 @@ public sealed class StreamBook : Book
     private readonly CompressionLevel compressionLevel;
     private readonly bool continueOnCapturedContext;
     private readonly Stream output;
-
     private readonly List<StreamSheetBuilder> sheets = new();
 
     public StreamBook(Stream output, CompressionLevel compressionLevel, bool leaveOpen, bool continueOnCapturedContext = false)
         : this(
             output,
             new BoundedSharedStrings(
-                maxCount: 64 * 1024,
-                maxSingleStringLength: 32,
-                maxTotalLength: 64 * 1024 * 16
+                64 * 1024,
+                32,
+                64 * 1024 * 16
             ),
             compressionLevel,
             leaveOpen,
@@ -53,13 +52,13 @@ public sealed class StreamBook : Book
         archive.Dispose();
     }
 
-    public override SheetBuilder OpenSheet(string name)
+    public override SheetBuilder OpenSheet(string name, SheetOptions options)
     {
         EnsureThereIsNoCurrentSheet();
 
         var path = new SheetPath(sheets.Count);
         var entry = archive.CreateEntry(path.AsString(), compressionLevel);
-        var builder = new StreamSheetBuilder(path, name, entry, continueOnCapturedContext);
+        var builder = new StreamSheetBuilder(path, name, entry, options, continueOnCapturedContext);
         sheets.Add(builder);
         return builder;
     }
@@ -103,8 +102,8 @@ public sealed class StreamBook : Book
     {
         xml.WriteStartDocument(true);
         {
-            xml.WriteStartElement("workbook", "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
-            xml.WriteAttributeString("xmlns", "r", "", "http://schemas.openxmlformats.org/officeDocument/2006/relationships");
+            xml.WriteStartElement("workbook", XlsxStructure.Namespaces.Spreadsheet.Main);
+            xml.WriteAttributeString("xmlns", "r", "", XlsxStructure.Namespaces.OfficeDocuments.Relationships);
             {
                 xml.WriteStartElement("sheets");
                 {
@@ -129,7 +128,7 @@ public sealed class StreamBook : Book
     {
         xml.WriteStartDocument(true);
         {
-            xml.WriteStartElement("sst", XlsxStructure.Namespaces.Main);
+            xml.WriteStartElement("sst", XlsxStructure.Namespaces.Spreadsheet.Main);
             {
                 var expectedId = new SharedStringId(0);
                 foreach (var (@string, id) in Strings.OrderBy(pair => pair.Id))
@@ -273,13 +272,18 @@ public sealed class StreamBook : Book
         private readonly StreamSheetWindow window;
         private volatile bool open = true;
 
-        public StreamSheetBuilder(SheetPath path, string name, ZipArchiveEntry entry, bool continueOnCapturedContext)
+        public StreamSheetBuilder(
+            SheetPath path,
+            string name,
+            ZipArchiveEntry entry,
+            SheetOptions options,
+            bool continueOnCapturedContext)
         {
             Path = path;
             Name = name;
             this.continueOnCapturedContext = continueOnCapturedContext;
             entryStream = entry.Open();
-            window = new StreamSheetWindow(entryStream);
+            window = new StreamSheetWindow(entryStream, options);
         }
 
         public SheetPath Path { get; }

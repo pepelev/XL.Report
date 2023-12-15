@@ -4,7 +4,15 @@ public static class XlsxStructure
 {
     public static class Namespaces
     {
-        public const string Main = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+        public static class OfficeDocuments
+        {
+            public const string Relationships = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+        }
+
+        public static class Spreadsheet
+        {
+            public const string Main = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+        }
     }
 
     public static class Worksheet
@@ -32,7 +40,7 @@ public static class XlsxStructure
             public const string NameValue = "val";
             public const string Family = "family";
             public const string FamilyValue = "val";
-            public const string Charset = "204";
+            public const string Charset = "charset";
             public const string CharsetValue = "val";
             public const string Scheme = "minor";
             public const string SchemeValue = "val";

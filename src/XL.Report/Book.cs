@@ -10,7 +10,7 @@ public abstract class Book : IAsyncDisposable
     public abstract ValueTask DisposeAsync();
 
     // todo check name constraints
-    public abstract SheetBuilder OpenSheet(string name);
+    public abstract SheetBuilder OpenSheet(string name, SheetOptions options);
 
     public abstract Task CompleteAsync();
 

@@ -29,6 +29,7 @@ public sealed class Tests
         - sharedStrings,
         - закрепление областей,
         - column width and row height
+        - column and row styles
      */
 
     [Test]
@@ -42,7 +43,7 @@ public sealed class Tests
             leaveOpen: false
         );
 
-        await using (var sheet = book.OpenSheet("Prototype"))
+        await using (var sheet = book.OpenSheet("Prototype", SheetOptions.Default))
         {
             var bigRed = new Style(
                 new Appearance(
@@ -63,7 +64,7 @@ public sealed class Tests
             await sheet.CompleteAsync().ConfigureAwait(false);
         }
 
-        await using (var sheet = book.OpenSheet("Prototype 2"))
+        await using (var sheet = book.OpenSheet("Prototype 2", SheetOptions.Default))
         {
             var bigRed = new Style(
                 new Appearance(
@@ -160,9 +161,9 @@ public sealed class Tests
     {
         xml.WriteStartDocumentAsync(standalone: true);
         {
-            xml.WriteStartElement("worksheet", ns: "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
+            xml.WriteStartElement("worksheet", ns: XlsxStructure.Namespaces.Spreadsheet.Main);
             // xml.WriteAttributeString("xmlns", "");
-            xml.WriteAttributeString("xmlns", "r", "", "http://schemas.openxmlformats.org/officeDocument/2006/relationships");
+            xml.WriteAttributeString("xmlns", "r", "", XlsxStructure.Namespaces.OfficeDocuments.Relationships);
             // xml.WriteAttributeString("mc", "http://schemas.openxmlformats.org/markup-compatibility/2006");
             // xml.WriteAttributeString("mc", "Ignorable", "x14ac");
             // xml.WriteAttributeString("x14ac", "http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac");
@@ -195,8 +196,8 @@ public sealed class Tests
     {
         xml.WriteStartDocument(standalone: true);
         {
-            xml.WriteStartElement("workbook", ns: "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
-            xml.WriteAttributeString("xmlns", "r", "", "http://schemas.openxmlformats.org/officeDocument/2006/relationships");
+            xml.WriteStartElement("workbook", ns: XlsxStructure.Namespaces.Spreadsheet.Main);
+            xml.WriteAttributeString("xmlns", "r", "", XlsxStructure.Namespaces.OfficeDocuments.Relationships);
             {
                 xml.WriteStartElement("sheets");
                 {

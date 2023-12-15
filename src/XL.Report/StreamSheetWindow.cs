@@ -6,14 +6,16 @@ namespace XL.Report;
 
 public sealed class StreamSheetWindow : SheetWindow, IDisposable
 {
+    private readonly SheetOptions options;
     private readonly Dictionary<Location, Cell> placed = new();
     private Range activeRange;
     private readonly Stack<Range> reductions = new();
     private bool started = false;
     private readonly XmlWriter xml;
 
-    public StreamSheetWindow(Stream stream)
+    public StreamSheetWindow(Stream stream, SheetOptions options)
     {
+        this.options = options;
         activeRange = Range.EntireSheet;
         var settings = new XmlWriterSettings
         {
@@ -128,8 +130,54 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         }
 
         xml.WriteStartDocument(standalone: true);
-        xml.WriteStartElement("worksheet", ns: "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
-        xml.WriteAttributeString("xmlns", "r", "", "http://schemas.openxmlformats.org/officeDocument/2006/relationships");
+        xml.WriteStartElement("worksheet", ns: XlsxStructure.Namespaces.Spreadsheet.Main);
+        xml.WriteAttributeString("xmlns", "r", "", XlsxStructure.Namespaces.OfficeDocuments.Relationships);
+
+        var freeze = options.Freeze;
+        if (freeze != FreezeOptions.None)
+        {
+            xml.WriteStartElement("sheetViews");
+            {
+                xml.WriteStartElement("sheetView");
+                xml.WriteAttributeString("workbookViewId", "0");
+                {
+                    xml.WriteStartElement("pane");
+                    if (freeze.FreezeByX > 0)
+                    {
+                        xml.WriteAttributeInt("xSplit", freeze.FreezeByX);
+                    }
+
+                    if (freeze.FreezeByY > 0)
+                    {
+                        xml.WriteAttributeInt("ySplit", freeze.FreezeByY);
+                    }
+
+                    var topLeftCell = new Location(freeze.FreezeByX + 1, freeze.FreezeByY + 1);
+                    xml.WriteAttributeString("topLeftCell", topLeftCell.AsString());
+                    xml.WriteAttributeString("state", "frozen");
+                    xml.WriteEndElement();
+                }
+                xml.WriteEndElement();
+            }
+            xml.WriteEndElement();
+        }
+
+        if (options.Columns.Count > 0)
+        {
+            xml.WriteStartElement("cols");
+            {
+                foreach (var (x, width) in options.Columns)
+                {
+                    xml.WriteStartElement("col");
+                    xml.WriteAttributeInt("min", x);
+                    xml.WriteAttributeInt("max", x);
+                    xml.WriteAttributeString("width", width.ToString("N6"));
+                    xml.WriteEndElement();
+                }
+            }
+            xml.WriteEndElement();
+        }
+
         xml.WriteStartElement("sheetData");
 
         started = true;

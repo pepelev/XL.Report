@@ -38,7 +38,7 @@ public sealed partial class Style
 
         public void Write(XmlWriter xml)
         {
-            xml.WriteStartElement(RootElement, XlsxStructure.Namespaces.Main);
+            xml.WriteStartElement(RootElement, XlsxStructure.Namespaces.Spreadsheet.Main);
             {
                 var orderedFonts = fonts
                     .OrderBy(font => font.Value)

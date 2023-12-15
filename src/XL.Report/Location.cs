@@ -83,10 +83,11 @@ public readonly struct Location : IEquatable<Location>, IParsable<Location>
     private bool IsCorrect() => MinX <= X && X <= MaxX &&
                                 MinY <= Y && Y <= MaxY;
 
-    public override string ToString() => IsCorrect()
+    public string AsString() => IsCorrect()
         ? PrintCorrectValue()
         : $"{X}, {Y}";
 
+    public override string ToString() => AsString();
     private string PrintCorrectValue() => PrintX() + PrintY();
     private string PrintX() => PrintX((uint) X);
 

@@ -3,6 +3,71 @@ using XL.Report.Styles;
 
 namespace XL.Report;
 
+public sealed class String : Content
+{
+    private readonly string content;
+    private readonly SharedStrings sharedStrings;
+
+    public String(string content, SharedStrings sharedStrings)
+    {
+        this.content = content;
+        this.sharedStrings = sharedStrings;
+    }
+
+    public override void Write(XmlWriter xml)
+    {
+        Content innerContent = sharedStrings.TryRegister(content) is { } id
+            ? new SharedString.ById(id)
+            : new InlineString(content);
+
+        innerContent.Write(xml);
+    }
+}
+
+public static class SharedString
+{
+    public sealed class ById : Content
+    {
+        private readonly SharedStringId id;
+
+        public ById(SharedStringId id)
+        {
+            this.id = id;
+        }
+
+        public override void Write(XmlWriter xml)
+        {
+            xml.WriteAttributeString("t", "s");
+            {
+                xml.WriteStartElement("v");
+                {
+                    xml.WriteValue(id.Index);
+                }
+                xml.WriteEndElement();
+            }
+        }
+    }
+
+    public sealed class Force : Content
+    {
+        private readonly string content;
+        private readonly SharedStrings sharedStrings;
+
+        public Force(string content, SharedStrings sharedStrings)
+        {
+            this.content = content;
+            this.sharedStrings = sharedStrings;
+        }
+
+        public override void Write(XmlWriter xml)
+        {
+            var id = sharedStrings.ForceRegister(content);
+            var innerContent = new ById(id);
+            innerContent.Write(xml);
+        }
+    }
+}
+
 public sealed class InlineString : Content
 {
     private readonly string content;
@@ -16,15 +81,17 @@ public sealed class InlineString : Content
     {
         // todo extract to consts
         xml.WriteAttributeString("t", "inlineStr");
-        xml.WriteStartElement("is");
         {
-            xml.WriteStartElement("t");
+            xml.WriteStartElement("is");
             {
-                xml.WriteValue(content);
+                xml.WriteStartElement("t");
+                {
+                    xml.WriteValue(content);
+                }
+                xml.WriteEndElement();
             }
             xml.WriteEndElement();
         }
-        xml.WriteEndElement();
     }
 }
 

@@ -16,6 +16,7 @@ public sealed class Tests
         "[Content_Types].xml" -> "xl/worksheets/sheet1.xml"
         "[Content_Types].xml" -> "xl/styles.xml"
         "xl/styles.xml" -> "xl/worksheets/sheet1.xml"
+        "xl/sharedStrings.xml" -> "xl/worksheets/sheet1.xml"
         "xl/_rels/workbook.xml.rels" -> "xl/worksheets/sheet1.xml"
 
         todo add
@@ -50,7 +51,7 @@ public sealed class Tests
                 Format.General
             );
             var row = new Row(
-                new Cell(new InlineString("Hello world!")),
+                new Cell(book.Strings.String("Hello world!")),
                 new Cell(new Number(509), book.Styles.Register(bigRed))
             );
 

@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Runtime.CompilerServices;
+using System.Text;
 using System.Xml;
 using XL.Report.Styles;
 
@@ -71,14 +72,14 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         }
 
         var top = range.Top;
-        var mergeRow = new MergeRow(top, range.Left, range.Left + size.Width);
+        var mergeRow = new MergeRow(top, new Interval<int>(range.Left, range.Left + size.Width));
         for (var i = 0; i < size.Height; i++)
         {
             var result = rows.Find(top + i);
             if (result.Found)
             {
                 ref var row = ref result.Result;
-                if (!row.CanAdd(mergeRow))
+                if (!row.CanAdd(mergeRow.Span))
                 {
                     throw new ArgumentException("overlaps with already placed content", nameof(size));
                 }
@@ -246,40 +247,61 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
 
         public void Add(CellX cell)
         {
-            // todo check merges not breaks
+            if (!CanAdd(new Interval<int>(cell.X, cell.X)))
+            {
+                throw new InvalidOperationException();
+            }
+
             cells.TryAdd(cell).ThrowOnConflict();
         }
 
-        public bool CanAdd(MergeRow merge)
+        public bool CanAdd(Interval<int> span)
         {
-            // todo check not breaks existing merges: merges[a - 1, b].IsEmpty
-            // todo check not breaks existing cells: cells[a, b].IsEmpty
-
-            var boundIterator = cells.LeftLowerBound(merge.Left);
-            if (boundIterator.State == IteratorState.InsideTree)
+            var mergeBoundIterator = merges.RightLowerBound(span.LeftInclusive);
+            while (mergeBoundIterator.State == IteratorState.InsideTree)
             {
-                if (boundIterator.Current.X <= merge.Right)
+                if (mergeBoundIterator.Current.Span.RightThan(span))
+                {
+                    break;
+                }
+                
+                if (mergeBoundIterator.Current.Span.Intersect(span))
+                {
+                    return false;
+                }
+
+                mergeBoundIterator.MoveNext();
+            }
+
+            var cellBoundIterator = cells.LeftLowerBound(span.LeftInclusive);
+            if (cellBoundIterator.State == IteratorState.InsideTree)
+            {
+                if (cellBoundIterator.Current.X <= span.RightInclusive)
                 {
                     return false;
                 }
             }
 
-            throw new NotImplementedException();
+            return true;
         }
 
         public void Add(MergeRow merge)
         {
-            // todo check not breaks existing merges
-            // todo check not breaks existing cells
+            if (!CanAdd(merge.Span))
+            {
+                throw new InvalidOperationException();
+            }
+
+            merges.TryAdd(merge).ThrowOnConflict();
         }
 
         public BTreeSlim<int, CellX>.Enumerator GetEnumerator() => cells.GetEnumerator();
     }
 
     // todo pack left and right to shorts
-    private readonly record struct MergeRow(int Top, int Left, int Right) : IKeyed<int>
+    private readonly record struct MergeRow(int Top, Interval<int> Span) : IKeyed<int>
     {
-        int IKeyed<int>.Key => Left;
+        int IKeyed<int>.Key => Span.LeftInclusive;
     }
 
     // todo pack compact (style? and int (actually short) can be packed into long)

@@ -44,6 +44,19 @@ public sealed class BTreeSlimShould
     }
 
     [Test]
+    public void Bug37()
+    {
+        var sut = new BTreeSlim<int, Item>();
+
+        for (var i = 1; i <= 37; i++)
+        {
+            sut.TryAdd(new Item(i, "a"));
+        }
+
+        sut.ToList().Should().HaveCount(37);
+    }
+
+    [Test]
     public void Left_Lower_Bound([Range(0, 16)] int key)
     {
         var sut = new BTreeSlim<int, Item>();

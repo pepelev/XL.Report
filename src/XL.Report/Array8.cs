@@ -226,6 +226,7 @@ public sealed class BTreeSlim<TKey, T> : IEnumerable<T>
                 {
                     var nonLeaf = (Node.NonLeaf)currentFrame.Node;
                     var newFrameIndex = currentFrame.Index + 1;
+                    currentFrame.Index++;
                     if (nonLeaf.Items.Count <= newFrameIndex)
                     {
                         stack.Pop();
@@ -280,8 +281,6 @@ public sealed class BTreeSlim<TKey, T> : IEnumerable<T>
                 }
             }
         }
-
-
 
         private void Push(Node node, PushStrategy strategy)
         {

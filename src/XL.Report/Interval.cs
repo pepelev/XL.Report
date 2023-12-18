@@ -20,7 +20,7 @@ internal readonly struct Interval<T> where T : IComparisonOperators<T, T, bool>
         return LeftInclusive <= other.RightInclusive && other.LeftInclusive <= RightInclusive;
     }
 
-    public bool RightThan(Interval<T> other) => LeftInclusive > other.RightInclusive;
+    public bool ToRightOf(Interval<T> other) => LeftInclusive > other.RightInclusive;
 
     public T LeftInclusive { get; }
     public T RightInclusive { get; }

@@ -74,9 +74,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         var top = range.Top;
         var mergeRow = new MergeRow(
             top,
-            new Interval<int>(range.Left, range.Left + size.Width),
-            content,
-            styleId
+            new Interval<int>(range.Left, range.Left + size.Width)
         );
         for (var i = 0; i < size.Height; i++)
         {
@@ -97,12 +95,12 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
             if (result.Found)
             {
                 ref var row = ref result.Result;
-                row.Add(mergeRow);
+                row.Add(mergeRow, content, styleId);
             }
             else
             {
                 var newRow = new Row(range.Top);
-                newRow.Add(mergeRow);
+                newRow.Add(mergeRow, content, styleId);
                 rows.TryAdd(newRow);
             }
         }
@@ -279,7 +277,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
             var mergeBoundIterator = merges.RightLowerBound(span.LeftInclusive);
             while (mergeBoundIterator.State == IteratorState.InsideTree)
             {
-                if (mergeBoundIterator.Current.Span.RightThan(span))
+                if (mergeBoundIterator.Current.Span.ToRightOf(span))
                 {
                     break;
                 }
@@ -304,7 +302,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
             return true;
         }
 
-        public void Add(MergeRow merge)
+        public void Add(MergeRow merge, Content content, StyleId? styleId)
         {
             if (!CanAdd(merge.Span))
             {
@@ -313,7 +311,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
 
             if (Y == merge.Top)
             {
-                var cellX = new CellX(merge.Span.LeftInclusive, merge.ToCell());
+                var cellX = new CellX(merge.Span.LeftInclusive, new Cell(content, styleId));
                 cells.TryAdd(cellX).ThrowOnConflict();
             }
 
@@ -324,10 +322,9 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
     }
 
     // todo pack left and right to shorts
-    private readonly record struct MergeRow(int Top, Interval<int> Span, Content Content, StyleId? StyleId) : IKeyed<int>
+    private readonly record struct MergeRow(int Top, Interval<int> Span) : IKeyed<int>
     {
         int IKeyed<int>.Key => Span.LeftInclusive;
-        public Cell ToCell() => new(Content, StyleId);
     }
 
     // todo pack compact (style? and int (actually short) can be packed into long)

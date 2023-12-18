@@ -29,12 +29,12 @@ public sealed class NoFill : Fill, IEquatable<NoFill>
 
     public override void Write(Xml xml)
     {
-        xml.WriteStartElement(XlsxStructure.Styles.Fills.Fill);
+        using (xml.WriteStartElement(XlsxStructure.Styles.Fills.Fill))
         {
-            xml.WriteStartElement(XlsxStructure.Styles.Fills.Pattern);
-            xml.WriteAttribute(XlsxStructure.Styles.Fills.PatternType, "none");
-            xml.WriteEndElement();
+            using (xml.WriteStartElement(XlsxStructure.Styles.Fills.Pattern))
+            {
+                xml.WriteAttribute(XlsxStructure.Styles.Fills.PatternType, "none");
+            }
         }
-        xml.WriteEndElement();
     }
 }

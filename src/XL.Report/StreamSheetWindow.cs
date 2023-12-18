@@ -254,6 +254,16 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         {
             // todo check not breaks existing merges: merges[a - 1, b].IsEmpty
             // todo check not breaks existing cells: cells[a, b].IsEmpty
+
+            var boundIterator = cells.LeftLowerBound(merge.Left);
+            if (boundIterator.State == IteratorState.InsideTree)
+            {
+                if (boundIterator.Current.X <= merge.Right)
+                {
+                    return false;
+                }
+            }
+
             throw new NotImplementedException();
         }
 

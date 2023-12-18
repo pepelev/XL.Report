@@ -117,7 +117,29 @@ public sealed class BTreeSlim<TKey, T> : IEnumerable<T>
         return root.Find(key);
     }
 
-    public Iterator CreateIterator() => new(this);
+    /// <summary>
+    /// returns iterator that either
+    /// - AfterTree or
+    /// - InsideTree and Current is first that >= key
+    /// </summary>
+    public Iterator LeftLowerBound(TKey key)
+    {
+        var iterator = BeforeTree();
+        iterator.LeftLowerBound(key);
+        return iterator;
+    }
+
+    public Iterator RightLowerBound(TKey key)
+    {
+        var iterator = BeforeTree();
+        iterator.RightLowerBound(key);
+        return iterator;
+    }
+
+    public Iterator BeforeTree() => new(this);
+
+    // todo
+    // public Iterator AfterTree() => new(this);
 
     public void Clear()
     {
@@ -214,39 +236,6 @@ public sealed class BTreeSlim<TKey, T> : IEnumerable<T>
             }
         }
 
-        private void Push(Node node, PushStrategy strategy)
-        {
-            while (true)
-            {
-                if (node is Node.Leaf leaf)
-                {
-                    if (leaf.Items.Count > 0)
-                    {
-                        var index = strategy == PushStrategy.First
-                            ? 0
-                            : leaf.Items.Count - 1;
-                        stack.Push((node, index));
-                    }
-
-                    return;
-                }
-                else
-                {
-                    var nonLeaf = (Node.NonLeaf)node;
-                    var index = strategy == PushStrategy.First
-                        ? 0
-                        : nonLeaf.Items.Count - 1;
-                    var childIndex = strategy == PushStrategy.First
-                        ? 0
-                        : index + 1;
-
-                    stack.Push((nonLeaf, index));
-
-                    node = nonLeaf.Children.Content[childIndex];
-                }
-            }
-        }
-
         public void MovePrevious()
         {
             MovePreviousInternal();
@@ -292,12 +281,149 @@ public sealed class BTreeSlim<TKey, T> : IEnumerable<T>
             }
         }
 
+
+
+        private void Push(Node node, PushStrategy strategy)
+        {
+            while (true)
+            {
+                if (node is Node.Leaf leaf)
+                {
+                    if (leaf.Items.Count > 0)
+                    {
+                        var index = strategy == PushStrategy.First
+                            ? 0
+                            : leaf.Items.Count - 1;
+                        stack.Push((node, index));
+                    }
+
+                    return;
+                }
+                else
+                {
+                    var nonLeaf = (Node.NonLeaf)node;
+                    var index = strategy == PushStrategy.First
+                        ? 0
+                        : nonLeaf.Items.Count - 1;
+                    var childIndex = strategy == PushStrategy.First
+                        ? 0
+                        : index + 1;
+
+                    stack.Push((nonLeaf, index));
+
+                    node = nonLeaf.Children.Content[childIndex];
+                }
+            }
+        }
+
         public IteratorState State => (stack.IsEmpty, lastMove) switch
         {
             (true, Move.Next) => IteratorState.AfterTree,
             (true, Move.Previous) => IteratorState.BeforeTree,
             _ => IteratorState.InsideTree
         };
+
+        public void LeftLowerBound(TKey key)
+        {
+            ToBeforeTree();
+            var node = tree.root;
+            while (true)
+            {
+                m1:
+                if (node is Node.Leaf leaf)
+                {
+                    for (var i = 0; i < leaf.Items.Count; i++)
+                    {
+                        var comparison = key.CompareTo(leaf.Items.Content[i].Key);
+                        if (comparison <= 0)
+                        {
+                            stack.Push((leaf, i));
+                            return;
+                        }
+                    }
+
+                    stack.Push((leaf, leaf.Items.Count - 1));
+                    MoveNext();
+                    return;
+                }
+
+                var nonLeaf = (Node.NonLeaf)node;
+                for (var i = nonLeaf.Items.Count - 1; i >= 0; i--)
+                {
+                    var comparison = key.CompareTo(nonLeaf.Items.Content[i].Key);
+                    if (comparison == 0)
+                    {
+                        stack.Push((nonLeaf, i));
+                        return;
+                    }
+
+                    if (comparison > 0)
+                    {
+                        if (i + 1 < nonLeaf.Items.Count)
+                        {
+                            stack.Push((nonLeaf, i + 1));
+                        }
+
+                        node = nonLeaf.Children.Content[i + 1];
+                        goto m1;
+                    }
+                }
+
+                stack.Push((nonLeaf, 0));
+                node = nonLeaf.Children.Content[0];
+            }
+        }
+
+        public void RightLowerBound(TKey key)
+        {
+            ToAfterTree();
+            var node = tree.root;
+            while (true)
+            {
+                m1:
+                if (node is Node.Leaf leaf)
+                {
+                    for (var i = leaf.Items.Count - 1; i >= 0; i--)
+                    {
+                        var comparison = leaf.Items.Content[i].Key.CompareTo(key);
+                        if (comparison <= 0)
+                        {
+                            stack.Push((leaf, i));
+                            return;
+                        }
+                    }
+
+                    stack.Push((leaf, 0));
+                    MovePrevious();
+                    return;
+                }
+
+                var nonLeaf = (Node.NonLeaf)node;
+                for (var i = 0; i < nonLeaf.Items.Count; i++)
+                {
+                    var comparison = nonLeaf.Items.Content[i].Key.CompareTo(key);
+                    if (comparison == 0)
+                    {
+                        stack.Push((nonLeaf, i));
+                        return;
+                    }
+
+                    if (comparison > 0)
+                    {
+                        if (0 <= i - 1)
+                        {
+                            stack.Push((nonLeaf, i - 1));
+                        }
+
+                        node = nonLeaf.Children.Content[i];
+                        goto m1;
+                    }
+                }
+
+                stack.Push((nonLeaf, nonLeaf.Items.Count - 1));
+                node = nonLeaf.Children.Content[nonLeaf.Items.Count];
+            }
+        }
     }
 
     public struct Enumerator : IEnumerator<T>
@@ -306,7 +432,7 @@ public sealed class BTreeSlim<TKey, T> : IEnumerable<T>
 
         internal Enumerator(BTreeSlim<TKey, T> tree)
         {
-            iterator = tree.CreateIterator();
+            iterator = tree.BeforeTree();
         }
 
         public bool MoveNext()

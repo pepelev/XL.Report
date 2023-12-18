@@ -19,6 +19,26 @@ public sealed class BTreeSlimShould
         sut.TryAdd(new Item(8, "h"));
 
         var items = sut.ToList();
+
+        var iterator = sut.CreateIterator();
+        iterator.MoveNext();
+
+        while (iterator.State != IteratorState.AfterTree)
+        {
+            Console.WriteLine(iterator.Current);
+            iterator.MoveNext();
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("---");
+        Console.WriteLine();
+
+        iterator.MovePrevious();
+        while (iterator.State != IteratorState.BeforeTree)
+        {
+            Console.WriteLine(iterator.Current);
+            iterator.MovePrevious();
+        }
     }
 
     private readonly record struct Item(int Key, string Value) : IKeyed<int>

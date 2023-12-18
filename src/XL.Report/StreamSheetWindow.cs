@@ -59,19 +59,63 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
 
     public override void Merge(Size size, Content content, StyleId? styleId)
     {
-        // todo check range can contain
+        if (size.HasArea)
+        {
+            throw new ArgumentException($"must {nameof(size.HasArea)}", nameof(size));
+        }
 
-        throw new NotImplementedException();
+        var range = Range;
+        if (!range.Size.Contains(size))
+        {
+            throw new ArgumentException($"is bigger than {nameof(range)}", nameof(size));
+        }
+
+        var top = range.Top;
+        var mergeRow = new MergeRow(top, range.Left, range.Left + size.Width);
+        for (var i = 0; i < size.Height; i++)
+        {
+            var result = rows.Find(top + i);
+            if (result.Found)
+            {
+                ref var row = ref result.Result;
+                if (!row.CanAdd(mergeRow))
+                {
+                    throw new ArgumentException("overlaps with already placed content", nameof(size));
+                }
+            }
+        }
+
+        for (var i = 0; i < size.Height; i++)
+        {
+            var result = rows.Find(top + i);
+            if (result.Found)
+            {
+                ref var row = ref result.Result;
+                row.Add(mergeRow);
+            }
+            else
+            {
+                var newRow = new Row(range.Top);
+                newRow.Add(mergeRow);
+                rows.TryAdd(newRow);
+            }
+        }
     }
 
     public override void PushReduce(Offset offset, Size? newSize = null)
     {
+        if (newSize?.IsDegenerate == true)
+        {
+            throw new ArgumentException("is degenerate", nameof(newSize));
+        }
+
         var current = Range;
-        // todo check size nonnegative
         var @new = new Range(current.LeftTop + offset, newSize ?? current.Size - offset);
         if (!current.Contains(@new))
         {
-            throw new InvalidOperationException();
+            throw current.Contains(new Range(current.LeftTop + offset, Size.Empty))
+                ? new ArgumentException("is too big", nameof(newSize))
+                : new ArgumentException($"is out of current {nameof(Range)}", nameof(offset));
         }
 
         reductions.Push(@new);
@@ -193,6 +237,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         public int Y { get; }
         int IKeyed<int>.Key => Y;
         private readonly BTreeSlim<int, CellX> cells = new();
+        private readonly BTreeSlim<int, MergeRow> merges = new();
 
         public Row(int y)
         {
@@ -201,10 +246,30 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
 
         public void Add(CellX cell)
         {
+            // todo check merges not breaks
             cells.TryAdd(cell).ThrowOnConflict();
         }
 
+        public bool CanAdd(MergeRow merge)
+        {
+            // todo check not breaks existing merges: merges[a - 1, b].IsEmpty
+            // todo check not breaks existing cells: cells[a, b].IsEmpty
+            throw new NotImplementedException();
+        }
+
+        public void Add(MergeRow merge)
+        {
+            // todo check not breaks existing merges
+            // todo check not breaks existing cells
+        }
+
         public BTreeSlim<int, CellX>.Enumerator GetEnumerator() => cells.GetEnumerator();
+    }
+
+    // todo pack left and right to shorts
+    private readonly record struct MergeRow(int Top, int Left, int Right) : IKeyed<int>
+    {
+        int IKeyed<int>.Key => Left;
     }
 
     // todo pack compact (style? and int (actually short) can be packed into long)

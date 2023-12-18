@@ -57,6 +57,33 @@ public struct Stack<T, TBuffer> where TBuffer : IBuffer<T>
     }
 
     public bool IsEmpty => buffer.Count == 0;
+
+    public void Clear()
+    {
+        buffer.Content[..buffer.Count].Clear();
+        buffer.Count = 0;
+    }
+}
+
+
+
+public enum IteratorState
+{
+    BeforeTree,
+    InsideTree,
+    AfterTree
+}
+
+internal enum PushStrategy
+{
+    First,
+    Last
+}
+
+internal enum Move
+{
+    Next,
+    Previous
 }
 
 public sealed class BTreeSlim<TKey, T> : IEnumerable<T>
@@ -64,9 +91,12 @@ public sealed class BTreeSlim<TKey, T> : IEnumerable<T>
     where T : IKeyed<TKey>
 {
     private const int t = 4;
+
     // todo use pool of nodes
     // https://learn.microsoft.com/ru-ru/dotnet/api/microsoft.extensions.objectpool.defaultobjectpool-1
     private Node root = new Node.Leaf();
+
+    public bool IsEmpty => root is Node.Leaf { Items.Count: 0 };
 
     public AdditionResult TryAdd(T item)
     {
@@ -87,9 +117,187 @@ public sealed class BTreeSlim<TKey, T> : IEnumerable<T>
         return root.Find(key);
     }
 
+    public Iterator CreateIterator() => new(this);
+
     public void Clear()
     {
         root = new Node.Leaf();
+    }
+
+    public ref struct Iterator
+    {
+        private readonly BTreeSlim<TKey, T> tree;
+        private Move lastMove;
+
+        // todo Buffer8 is too small
+        private Stack<(Node Node, int Index), Buffer8<(Node Node, int Index)>> stack = new(new Buffer8<(Node Node, int Index)>());
+
+        public Iterator(BTreeSlim<TKey, T> tree)
+        {
+            this.tree = tree;
+            lastMove = Move.Previous;
+        }
+
+        public void ToBeforeTree()
+        {
+            stack.Clear();
+            lastMove = Move.Previous;
+        }
+
+        public void ToAfterTree()
+        {
+            stack.Clear();
+            lastMove = Move.Next;
+        }
+
+        public ref T Current
+        {
+            get
+            {
+                if (State == IteratorState.InsideTree)
+                {
+                    ref var entry = ref stack.Peek();
+                    if (entry.Node is Node.Leaf leaf)
+                    {
+                        return ref leaf.Items.Content[entry.Index];
+                    }
+
+                    var nonLeaf = (Node.NonLeaf)entry.Node;
+                    return ref nonLeaf.Items.Content[entry.Index];
+                }
+
+                throw new InvalidOperationException($"{nameof(Iterator)} is in wrong state: {State}");
+            }
+        }
+
+        public void MoveNext()
+        {
+            MoveNextInternal();
+            lastMove = Move.Next;
+        }
+
+        private void MoveNextInternal()
+        {
+            if (State == IteratorState.BeforeTree)
+            {
+                Push(tree.root, PushStrategy.First);
+                return;
+            }
+
+            if (State == IteratorState.InsideTree)
+            {
+                if (stack.IsEmpty)
+                {
+                    return;
+                }
+
+                ref var currentFrame = ref stack.Peek();
+                if (currentFrame.Node is Node.Leaf leaf)
+                {
+                    currentFrame.Index++;
+                    if (leaf.Items.Count <= currentFrame.Index)
+                    {
+                        stack.Pop();
+                    }
+                }
+                else
+                {
+                    var nonLeaf = (Node.NonLeaf)currentFrame.Node;
+                    var newFrameIndex = currentFrame.Index + 1;
+                    if (nonLeaf.Items.Count <= newFrameIndex)
+                    {
+                        stack.Pop();
+                    }
+
+                    Push(nonLeaf.Children.Content[newFrameIndex], PushStrategy.First);
+                }
+            }
+        }
+
+        private void Push(Node node, PushStrategy strategy)
+        {
+            while (true)
+            {
+                if (node is Node.Leaf leaf)
+                {
+                    if (leaf.Items.Count > 0)
+                    {
+                        var index = strategy == PushStrategy.First
+                            ? 0
+                            : leaf.Items.Count - 1;
+                        stack.Push((node, index));
+                    }
+
+                    return;
+                }
+                else
+                {
+                    var nonLeaf = (Node.NonLeaf)node;
+                    var index = strategy == PushStrategy.First
+                        ? 0
+                        : nonLeaf.Items.Count - 1;
+                    var childIndex = strategy == PushStrategy.First
+                        ? 0
+                        : index + 1;
+
+                    stack.Push((nonLeaf, index));
+
+                    node = nonLeaf.Children.Content[childIndex];
+                }
+            }
+        }
+
+        public void MovePrevious()
+        {
+            MovePreviousInternal();
+            lastMove = Move.Previous;
+        }
+
+        private void MovePreviousInternal()
+        {
+            if (State == IteratorState.AfterTree)
+            {
+                Push(tree.root, PushStrategy.Last);
+                return;
+            }
+
+            if (State == IteratorState.InsideTree)
+            {
+                if (stack.IsEmpty)
+                {
+                    return;
+                }
+
+                ref var currentFrame = ref stack.Peek();
+                if (currentFrame.Node is Node.Leaf)
+                {
+                    currentFrame.Index--;
+                    if (currentFrame.Index < 0)
+                    {
+                        stack.Pop();
+                    }
+                }
+                else
+                {
+                    var nonLeaf = (Node.NonLeaf)currentFrame.Node;
+                    var childIndex = currentFrame.Index;
+                    currentFrame.Index--;
+                    if (currentFrame.Index < 0)
+                    {
+                        stack.Pop();
+                    }
+
+                    Push(nonLeaf.Children.Content[childIndex], PushStrategy.Last);
+                }
+            }
+        }
+
+        public IteratorState State => (stack.IsEmpty, lastMove) switch
+        {
+            (true, Move.Next) => IteratorState.AfterTree,
+            (true, Move.Previous) => IteratorState.BeforeTree,
+            _ => IteratorState.InsideTree
+        };
     }
 
     public struct Enumerator : IEnumerator<T>

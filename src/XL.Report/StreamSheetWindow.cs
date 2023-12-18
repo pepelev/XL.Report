@@ -8,10 +8,11 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
 {
     private readonly SheetOptions options;
     private readonly Dictionary<Location, Cell> placed = new();
-    private Range activeRange;
+    private readonly BTreeSlim<int, RowX> rows = new();
     private readonly Stack<Range> reductions = new();
-    private bool started = false;
     private readonly XmlWriter xml;
+    private Range activeRange;
+    private bool started;
 
     public StreamSheetWindow(Stream stream, SheetOptions options)
     {
@@ -43,6 +44,11 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
             }
         );
 
+    public void Dispose()
+    {
+        xml.Dispose();
+    }
+
     public override void Place(Content content, StyleId? styleId)
     {
         var range = Range;
@@ -51,13 +57,28 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
             throw new InvalidOperationException();
         }
 
-        placed[range.LeftTop] = new Cell(content, styleId);
+        // todo delete
+        var cell = new Cell(content, styleId);
+        placed[range.LeftTop] = cell;
+
+        var result = rows.Find(range.Top);
+        if (result.Found)
+        {
+            ref var row = ref result.Result;
+            row.Add(new CellX(range.Left, cell));
+        }
+        else
+        {
+            var newRow = new RowX(range.Top);
+            newRow.Add(new CellX(range.Left, cell));
+            rows.TryAdd(newRow);
+        }
     }
 
     public override void Merge(Size size, Content content, StyleId? styleId)
     {
         // todo check range can contain
-        
+
         throw new NotImplementedException();
     }
 
@@ -84,13 +105,14 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         int Write()
         {
             var mostDownY = activeRange.LeftTop.Y;
-            foreach (var row in Rows)
+            
+            foreach (var row in rows)
             {
                 xml.WriteStartElement(XlsxStructure.Worksheet.Row);
                 xml.WriteStartAttribute("r");
                 xml.WriteValue(row.Y);
                 {
-                    foreach (var (x, content) in row.Contents)
+                    foreach (var (x, content) in row)
                     {
                         var location = new Location(x, row.Y);
                         content.Write(xml, location);
@@ -100,6 +122,23 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
 
                 mostDownY = Math.Max(mostDownY, row.Y);
             }
+
+            // foreach (var row in Rows)
+            // {
+            //     xml.WriteStartElement(XlsxStructure.Worksheet.Row);
+            //     xml.WriteStartAttribute("r");
+            //     xml.WriteValue(row.Y);
+            //     {
+            //         foreach (var (x, content) in row.Contents)
+            //         {
+            //             var location = new Location(x, row.Y);
+            //             content.Write(xml, location);
+            //         }
+            //     }
+            //     xml.WriteEndElement();
+            //
+            //     mostDownY = Math.Max(mostDownY, row.Y);
+            // }
 
             return mostDownY;
         }
@@ -114,7 +153,8 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         var newActiveRange = activeRange.ReduceDown(mostDownY + 1 - activeRange.LeftTop.Y);
 
         activeRange = newActiveRange;
-        placed.Clear();
+        // placed.Clear();
+        rows.Clear();
     }
 
     private void WriteStartOnlyFirstTime()
@@ -124,8 +164,8 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
             return;
         }
 
-        xml.WriteStartDocument(standalone: true);
-        xml.WriteStartElement("worksheet", ns: XlsxStructure.Namespaces.Spreadsheet.Main);
+        xml.WriteStartDocument(true);
+        xml.WriteStartElement("worksheet", XlsxStructure.Namespaces.Spreadsheet.Main);
         xml.WriteAttributeString("xmlns", "r", "", XlsxStructure.Namespaces.OfficeDocuments.Relationships);
 
         var freeze = options.Freeze;
@@ -184,6 +224,31 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         xml.WriteEndDocument();
     }
 
+    private readonly struct RowX : IKeyed<int>
+    {
+        public int Y { get; }
+        int IKeyed<int>.Key => Y;
+        private readonly BTreeSlim<int, CellX> cells = new();
+
+        public RowX(int y)
+        {
+            Y = y;
+        }
+
+        public void Add(CellX cell)
+        {
+            cells.TryAdd(cell).ThrowOnConflict();
+        }
+
+        public BTreeSlim<int, CellX>.Enumerator GetEnumerator() => cells.GetEnumerator();
+    }
+
+    // todo pack compact (style? and int (actually short) can be packed into long)
+    private readonly record struct CellX(int X, Cell Cell) : IKeyed<int>
+    {
+        int IKeyed<int>.Key => X;
+    }
+
     public readonly record struct Cell(Content Content, StyleId? StyleId)
     {
         public void Write(XmlWriter xml, Location location)
@@ -213,10 +278,5 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
 
         public int Y { get; }
         public IEnumerable<(int X, Cell Cell)> Contents { get; }
-    }
-
-    public void Dispose()
-    {
-        xml.Dispose();
     }
 }

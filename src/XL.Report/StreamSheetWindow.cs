@@ -7,11 +7,12 @@ namespace XL.Report;
 public sealed class StreamSheetWindow : SheetWindow, IDisposable
 {
     private readonly SheetOptions options;
-    private readonly Dictionary<Location, Cell> placed = new();
-    private Range activeRange;
+    private readonly BTreeSlim<int, Row> rows = new();
+    private readonly List<Range> mergedRanges = new();
     private readonly Stack<Range> reductions = new();
-    private bool started = false;
     private readonly XmlWriter xml;
+    private Range activeRange;
+    private bool started;
 
     public StreamSheetWindow(Stream stream, SheetOptions options)
     {
@@ -29,19 +30,10 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         ? reductions.Peek()
         : activeRange;
 
-    public IEnumerable<Row> Rows => placed
-        .GroupBy(pair => pair.Key.Y)
-        .OrderBy(row => row.Key)
-        .Select(
-            row =>
-            {
-                var y = row.Key;
-                var contents = row
-                    .Select(pair => (pair.Key.X, pair.Value))
-                    .OrderBy(pair => pair.Item1);
-                return new Row(y, contents);
-            }
-        );
+    public void Dispose()
+    {
+        xml.Dispose();
+    }
 
     public override void Place(Content content, StyleId? styleId)
     {
@@ -51,24 +43,87 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
             throw new InvalidOperationException();
         }
 
-        placed[range.LeftTop] = new Cell(content, styleId);
+        var cell = new Cell(content, styleId);
+        var result = rows.Find(range.Top);
+        if (result.Found)
+        {
+            ref var row = ref result.Result;
+            row.Add(new CellX(range.Left, cell));
+        }
+        else
+        {
+            var newRow = new Row(range.Top);
+            newRow.Add(new CellX(range.Left, cell));
+            rows.TryAdd(newRow);
+        }
     }
 
     public override void Merge(Size size, Content content, StyleId? styleId)
     {
-        // todo check range can contain
-        
-        throw new NotImplementedException();
+        if (!size.HasArea)
+        {
+            throw new ArgumentException($"must {nameof(size.HasArea)}", nameof(size));
+        }
+
+        var range = Range;
+        if (!range.Size.Contains(size))
+        {
+            throw new ArgumentException($"is bigger than {nameof(range)}", nameof(size));
+        }
+
+        var top = range.Top;
+        var mergeRow = new MergeRow(
+            top,
+            new Interval<int>(range.Left, range.Left + size.Width),
+            content,
+            styleId
+        );
+        for (var i = 0; i < size.Height; i++)
+        {
+            var result = rows.Find(top + i);
+            if (result.Found)
+            {
+                ref var row = ref result.Result;
+                if (!row.CanAdd(mergeRow.Span))
+                {
+                    throw new ArgumentException("overlaps with already placed content", nameof(size));
+                }
+            }
+        }
+
+        for (var i = 0; i < size.Height; i++)
+        {
+            var result = rows.Find(top + i);
+            if (result.Found)
+            {
+                ref var row = ref result.Result;
+                row.Add(mergeRow);
+            }
+            else
+            {
+                var newRow = new Row(range.Top);
+                newRow.Add(mergeRow);
+                rows.TryAdd(newRow);
+            }
+        }
+
+        mergedRanges.Add(new Range(range.LeftTop, size));
     }
 
     public override void PushReduce(Offset offset, Size? newSize = null)
     {
+        if (newSize?.IsDegenerate == true)
+        {
+            throw new ArgumentException("is degenerate", nameof(newSize));
+        }
+
         var current = Range;
-        // todo check size nonnegative
         var @new = new Range(current.LeftTop + offset, newSize ?? current.Size - offset);
         if (!current.Contains(@new))
         {
-            throw new InvalidOperationException();
+            throw current.Contains(new Range(current.LeftTop + offset, Size.Empty))
+                ? new ArgumentException("is too big", nameof(newSize))
+                : new ArgumentException($"is out of current {nameof(Range)}", nameof(offset));
         }
 
         reductions.Push(@new);
@@ -84,13 +139,14 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         int Write()
         {
             var mostDownY = activeRange.LeftTop.Y;
-            foreach (var row in Rows)
+            
+            foreach (var row in rows)
             {
                 xml.WriteStartElement(XlsxStructure.Worksheet.Row);
                 xml.WriteStartAttribute("r");
                 xml.WriteValue(row.Y);
                 {
-                    foreach (var (x, content) in row.Contents)
+                    foreach (var (x, content) in row)
                     {
                         var location = new Location(x, row.Y);
                         content.Write(xml, location);
@@ -114,7 +170,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         var newActiveRange = activeRange.ReduceDown(mostDownY + 1 - activeRange.LeftTop.Y);
 
         activeRange = newActiveRange;
-        placed.Clear();
+        rows.Clear();
     }
 
     private void WriteStartOnlyFirstTime()
@@ -124,8 +180,8 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
             return;
         }
 
-        xml.WriteStartDocument(standalone: true);
-        xml.WriteStartElement("worksheet", ns: XlsxStructure.Namespaces.Spreadsheet.Main);
+        xml.WriteStartDocument(true);
+        xml.WriteStartElement("worksheet", XlsxStructure.Namespaces.Spreadsheet.Main);
         xml.WriteAttributeString("xmlns", "r", "", XlsxStructure.Namespaces.OfficeDocuments.Relationships);
 
         var freeze = options.Freeze;
@@ -181,7 +237,105 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
     public void Complete()
     {
         WriteStartOnlyFirstTime();
+
+        xml.WriteEndElement(); // sheetData
+
+        xml.WriteStartElement("mergeCells");
+        {
+            foreach (var range in mergedRanges)
+            {
+                xml.WriteStartElement("mergeCell");
+                xml.WriteAttributeString("ref", range.ToString());
+                xml.WriteEndElement();
+            }
+        }
+        xml.WriteEndElement();
+
         xml.WriteEndDocument();
+    }
+
+    private readonly struct Row : IKeyed<int>
+    {
+        public int Y { get; }
+        int IKeyed<int>.Key => Y;
+        private readonly BTreeSlim<int, CellX> cells = new();
+        private readonly BTreeSlim<int, MergeRow> merges = new();
+
+        public Row(int y)
+        {
+            Y = y;
+        }
+
+        public void Add(CellX cell)
+        {
+            if (!CanAdd(new Interval<int>(cell.X, cell.X)))
+            {
+                throw new InvalidOperationException();
+            }
+
+            cells.TryAdd(cell).ThrowOnConflict();
+        }
+
+        public bool CanAdd(Interval<int> span)
+        {
+            var mergeBoundIterator = merges.RightLowerBound(span.LeftInclusive);
+            while (mergeBoundIterator.State == IteratorState.InsideTree)
+            {
+                if (mergeBoundIterator.Current.Span.RightThan(span))
+                {
+                    break;
+                }
+                
+                if (mergeBoundIterator.Current.Span.Intersect(span))
+                {
+                    return false;
+                }
+
+                mergeBoundIterator.MoveNext();
+            }
+
+            var cellBoundIterator = cells.LeftLowerBound(span.LeftInclusive);
+            if (cellBoundIterator.State == IteratorState.InsideTree)
+            {
+                if (cellBoundIterator.Current.X <= span.RightInclusive)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        public void Add(MergeRow merge)
+        {
+            if (!CanAdd(merge.Span))
+            {
+                throw new InvalidOperationException();
+            }
+
+            if (Y == merge.Top)
+            {
+                var cellX = new CellX(merge.Span.LeftInclusive, merge.ToCell());
+                cells.TryAdd(cellX).ThrowOnConflict();
+            }
+
+            merges.TryAdd(merge).ThrowOnConflict();
+        }
+
+        public BTreeSlim<int, CellX>.Enumerator GetEnumerator() => cells.GetEnumerator();
+    }
+
+    // todo pack left and right to shorts
+    private readonly record struct MergeRow(int Top, Interval<int> Span, Content Content, StyleId? StyleId) : IKeyed<int>
+    {
+        int IKeyed<int>.Key => Span.LeftInclusive;
+        public Cell ToCell() => new(Content, StyleId);
+    }
+
+    // todo pack compact (style? and int (actually short) can be packed into long)
+    private readonly record struct CellX(int X, Cell Cell) : IKeyed<int>
+    {
+        int IKeyed<int>.Key => X;
     }
 
     public readonly record struct Cell(Content Content, StyleId? StyleId)
@@ -200,23 +354,5 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
             }
             xml.WriteEndElement();
         }
-    }
-
-    // todo write content here instead of return
-    public sealed class Row
-    {
-        public Row(int y, IEnumerable<(int X, Cell Cell)> contents)
-        {
-            Y = y;
-            Contents = contents;
-        }
-
-        public int Y { get; }
-        public IEnumerable<(int X, Cell Cell)> Contents { get; }
-    }
-
-    public void Dispose()
-    {
-        xml.Dispose();
     }
 }

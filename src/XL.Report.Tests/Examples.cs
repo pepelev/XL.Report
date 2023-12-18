@@ -88,6 +88,24 @@ public sealed class Examples
     }
 
     [Test]
+    public void Merged_Cell()
+    {
+        using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
+
+        using (var sheet = book.OpenSheet(TestName, SheetOptions.Default))
+        {
+            var row = new Merge(
+                new InlineString("Merged cell"),
+                new Size(5, 2)
+            );
+            sheet.WriteRow(row);
+            sheet.Complete();
+        }
+
+        book.Complete();
+    }
+
+    [Test]
     public void Large()
     {
         var random = new Random(592739);

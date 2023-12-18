@@ -26,6 +26,7 @@ public readonly struct Size : IEquatable<Size>
     public int Height { get; }
 
     public bool IsDegenerate => Width < 0 || Height < 0;
+    public bool HasArea => Width > 0 && Height > 0;
 
     public bool Equals(Size other)
     {
@@ -52,4 +53,6 @@ public readonly struct Size : IEquatable<Size>
     {
         return (long)Width * Height;
     }
+
+    public bool Contains(Size size) => size.Width <= Width && size.Height <= Height;
 }

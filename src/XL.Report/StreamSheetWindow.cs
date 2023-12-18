@@ -7,8 +7,7 @@ namespace XL.Report;
 public sealed class StreamSheetWindow : SheetWindow, IDisposable
 {
     private readonly SheetOptions options;
-    private readonly Dictionary<Location, Cell> placed = new();
-    private readonly BTreeSlim<int, RowX> rows = new();
+    private readonly BTreeSlim<int, Row> rows = new();
     private readonly Stack<Range> reductions = new();
     private readonly XmlWriter xml;
     private Range activeRange;
@@ -30,20 +29,6 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         ? reductions.Peek()
         : activeRange;
 
-    public IEnumerable<Row> Rows => placed
-        .GroupBy(pair => pair.Key.Y)
-        .OrderBy(row => row.Key)
-        .Select(
-            row =>
-            {
-                var y = row.Key;
-                var contents = row
-                    .Select(pair => (pair.Key.X, pair.Value))
-                    .OrderBy(pair => pair.Item1);
-                return new Row(y, contents);
-            }
-        );
-
     public void Dispose()
     {
         xml.Dispose();
@@ -57,10 +42,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
             throw new InvalidOperationException();
         }
 
-        // todo delete
         var cell = new Cell(content, styleId);
-        placed[range.LeftTop] = cell;
-
         var result = rows.Find(range.Top);
         if (result.Found)
         {
@@ -69,7 +51,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         }
         else
         {
-            var newRow = new RowX(range.Top);
+            var newRow = new Row(range.Top);
             newRow.Add(new CellX(range.Left, cell));
             rows.TryAdd(newRow);
         }
@@ -123,23 +105,6 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
                 mostDownY = Math.Max(mostDownY, row.Y);
             }
 
-            // foreach (var row in Rows)
-            // {
-            //     xml.WriteStartElement(XlsxStructure.Worksheet.Row);
-            //     xml.WriteStartAttribute("r");
-            //     xml.WriteValue(row.Y);
-            //     {
-            //         foreach (var (x, content) in row.Contents)
-            //         {
-            //             var location = new Location(x, row.Y);
-            //             content.Write(xml, location);
-            //         }
-            //     }
-            //     xml.WriteEndElement();
-            //
-            //     mostDownY = Math.Max(mostDownY, row.Y);
-            // }
-
             return mostDownY;
         }
 
@@ -153,7 +118,6 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         var newActiveRange = activeRange.ReduceDown(mostDownY + 1 - activeRange.LeftTop.Y);
 
         activeRange = newActiveRange;
-        // placed.Clear();
         rows.Clear();
     }
 
@@ -224,13 +188,13 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         xml.WriteEndDocument();
     }
 
-    private readonly struct RowX : IKeyed<int>
+    private readonly struct Row : IKeyed<int>
     {
         public int Y { get; }
         int IKeyed<int>.Key => Y;
         private readonly BTreeSlim<int, CellX> cells = new();
 
-        public RowX(int y)
+        public Row(int y)
         {
             Y = y;
         }
@@ -265,18 +229,5 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
             }
             xml.WriteEndElement();
         }
-    }
-
-    // todo write content here instead of return
-    public sealed class Row
-    {
-        public Row(int y, IEnumerable<(int X, Cell Cell)> contents)
-        {
-            Y = y;
-            Contents = contents;
-        }
-
-        public int Y { get; }
-        public IEnumerable<(int X, Cell Cell)> Contents { get; }
     }
 }

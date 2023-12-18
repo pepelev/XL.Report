@@ -64,6 +64,8 @@ public sealed class BTreeSlim<TKey, T> : IEnumerable<T>
     where T : IKeyed<TKey>
 {
     private const int t = 4;
+    // todo use pool of nodes
+    // https://learn.microsoft.com/ru-ru/dotnet/api/microsoft.extensions.objectpool.defaultobjectpool-1
     private Node root = new Node.Leaf();
 
     public AdditionResult TryAdd(T item)

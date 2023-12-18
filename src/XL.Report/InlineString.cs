@@ -1,6 +1,4 @@
-﻿using System.Xml;
-
-namespace XL.Report;
+﻿namespace XL.Report;
 
 public sealed class InlineString : Content
 {
@@ -11,20 +9,21 @@ public sealed class InlineString : Content
         this.content = content;
     }
 
-    public override void Write(XmlWriter xml)
+    public override void Write(Xml xml)
+    {
+        Write(xml, content);
+    }
+
+    internal static void Write(Xml xml, string content)
     {
         // todo extract to consts
-        xml.WriteAttributeString("t", "inlineStr");
+        xml.WriteAttribute("t", "inlineStr");
         {
-            xml.WriteStartElement("is");
+            using (xml.WriteStartElement("is"))
+            using (xml.WriteStartElement("t"))
             {
-                xml.WriteStartElement("t");
-                {
-                    xml.WriteValue(content);
-                }
-                xml.WriteEndElement();
+                xml.WriteValue(content);
             }
-            xml.WriteEndElement();
         }
     }
 }

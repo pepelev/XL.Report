@@ -1,6 +1,3 @@
-using System.Collections;
-using System.Runtime.CompilerServices;
-
 namespace XL.Report;
 
 public interface IKeyed<out T>

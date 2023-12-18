@@ -10,9 +10,9 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
     private readonly BTreeSlim<int, Row> rows = new();
     private readonly List<Range> mergedRanges = new();
     private readonly Stack<Range> reductions = new();
-    private readonly XmlWriter xml;
+    private readonly Xml xml;
     private Range activeRange;
-    private bool started;
+    private (Xml.Block Document, Xml.Block SheetData)? started;
 
     public StreamSheetWindow(Stream stream, SheetOptions options)
     {
@@ -23,7 +23,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
             Encoding = Encoding.UTF8,
             CloseOutput = true
         };
-        xml = XmlWriter.Create(stream, settings);
+        xml = new Xml(XmlWriter.Create(stream, settings));
     }
 
     public override Range Range => reductions.Count > 0
@@ -142,17 +142,15 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
             
             foreach (var row in rows)
             {
-                xml.WriteStartElement(XlsxStructure.Worksheet.Row);
-                xml.WriteStartAttribute("r");
-                xml.WriteValue(row.Y);
+                using (xml.WriteStartElement(XlsxStructure.Worksheet.Row))
                 {
+                    xml.WriteAttributeSpan("r", row.Y);
                     foreach (var (x, content) in row)
                     {
                         var location = new Location(x, row.Y);
                         content.Write(xml, location);
                     }
                 }
-                xml.WriteEndElement();
 
                 mostDownY = Math.Max(mostDownY, row.Y);
             }
@@ -173,85 +171,85 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         rows.Clear();
     }
 
-    private void WriteStartOnlyFirstTime()
+    private (Xml.Block Document, Xml.Block SheetData) WriteStartOnlyFirstTime()
     {
-        if (started)
+        if (started.HasValue)
         {
-            return;
+            return started.Value;
         }
 
-        xml.WriteStartDocument(true);
-        xml.WriteStartElement("worksheet", XlsxStructure.Namespaces.Spreadsheet.Main);
-        xml.WriteAttributeString("xmlns", "r", "", XlsxStructure.Namespaces.OfficeDocuments.Relationships);
+        var document = xml.WriteStartDocument("worksheet", XlsxStructure.Namespaces.Spreadsheet.Main);
+        xml.WriteAttribute("xmlns", "r", XlsxStructure.Namespaces.OfficeDocuments.Relationships);
 
         var freeze = options.Freeze;
         if (freeze != FreezeOptions.None)
         {
-            xml.WriteStartElement("sheetViews");
+            using (xml.WriteStartElement("sheetViews"))
             {
-                xml.WriteStartElement("sheetView");
-                xml.WriteAttributeString("workbookViewId", "0");
+                using (xml.WriteStartElement("sheetView"))
                 {
-                    xml.WriteStartElement("pane");
-                    if (freeze.FreezeByX > 0)
+                    xml.WriteAttribute("workbookViewId", "0");
+                    using (xml.WriteStartElement("pane"))
                     {
-                        xml.WriteAttributeInt("xSplit", freeze.FreezeByX);
-                    }
+                        if (freeze.FreezeByX > 0)
+                        {
+                            xml.WriteAttributeSpan("xSplit", freeze.FreezeByX);
+                        }
 
-                    if (freeze.FreezeByY > 0)
-                    {
-                        xml.WriteAttributeInt("ySplit", freeze.FreezeByY);
-                    }
+                        if (freeze.FreezeByY > 0)
+                        {
+                            xml.WriteAttributeSpan("ySplit", freeze.FreezeByY);
+                        }
 
-                    var topLeftCell = new Location(freeze.FreezeByX + 1, freeze.FreezeByY + 1);
-                    xml.WriteAttributeString("topLeftCell", topLeftCell.AsString());
-                    xml.WriteAttributeString("state", "frozen");
-                    xml.WriteEndElement();
+                        var topLeftCell = new Location(freeze.FreezeByX + 1, freeze.FreezeByY + 1);
+                        xml.WriteAttribute("topLeftCell", topLeftCell);
+                        xml.WriteAttribute("state", "frozen");
+                    }
                 }
-                xml.WriteEndElement();
             }
-            xml.WriteEndElement();
         }
 
         if (options.Columns.Count > 0)
         {
-            xml.WriteStartElement("cols");
+            using (xml.WriteStartElement("cols"))
             {
                 foreach (var (x, width) in options.Columns)
                 {
-                    xml.WriteStartElement("col");
-                    xml.WriteAttributeInt("min", x);
-                    xml.WriteAttributeInt("max", x);
-                    xml.WriteAttributeString("width", width.ToString("N6"));
-                    xml.WriteEndElement();
+                    using (xml.WriteStartElement("col"))
+                    {
+                        xml.WriteAttributeSpan("min", x);
+                        xml.WriteAttributeSpan("max", x);
+                        xml.WriteAttributeSpan("width", width, "N6");
+                    }
                 }
             }
-            xml.WriteEndElement();
         }
 
-        xml.WriteStartElement("sheetData");
-
-        started = true;
+        var sheetData = xml.WriteStartElement("sheetData");
+        started = (document, sheetData);
+        return started.Value;
     }
 
     public void Complete()
     {
-        WriteStartOnlyFirstTime();
+        var (document, sheetData) = WriteStartOnlyFirstTime();
+        sheetData.Dispose();
 
-        xml.WriteEndElement(); // sheetData
-
-        xml.WriteStartElement("mergeCells");
+        if (mergedRanges.Count > 0)
         {
-            foreach (var range in mergedRanges)
+            using (xml.WriteStartElement("mergeCells"))
             {
-                xml.WriteStartElement("mergeCell");
-                xml.WriteAttributeString("ref", range.ToString());
-                xml.WriteEndElement();
+                foreach (var range in mergedRanges)
+                {
+                    using (xml.WriteStartElement("mergeCell"))
+                    {
+                        xml.WriteAttribute("ref", range);
+                    }
+                }
             }
         }
-        xml.WriteEndElement();
 
-        xml.WriteEndDocument();
+        document.Dispose();
     }
 
     private readonly struct Row : IKeyed<int>
@@ -340,19 +338,19 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
 
     public readonly record struct Cell(Content Content, StyleId? StyleId)
     {
-        public void Write(XmlWriter xml, Location location)
+        public void Write(Xml xml, Location location)
         {
-            xml.WriteStartElement(XlsxStructure.Worksheet.Cell);
-            xml.WriteAttributeString(XlsxStructure.Worksheet.Reference, location.ToString());
-            if (StyleId is { } styleId)
+            using (xml.WriteStartElement(XlsxStructure.Worksheet.Cell))
             {
-                xml.WriteAttributeInt(XlsxStructure.Worksheet.Style, styleId.Index);
-            }
+                xml.WriteAttribute(XlsxStructure.Worksheet.Reference, location);
 
-            {
+                if (StyleId is { } styleId)
+                {
+                    xml.WriteAttributeSpan(XlsxStructure.Worksheet.Style, styleId.Index);
+                }
+
                 Content.Write(xml);
             }
-            xml.WriteEndElement();
         }
     }
 }

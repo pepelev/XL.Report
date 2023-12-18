@@ -1,15 +1,13 @@
-﻿using System.Xml;
-
-namespace XL.Report.Styles.Fills;
+﻿namespace XL.Report.Styles.Fills;
 
 public abstract partial class Fill
 {
     public static Fill No { get; } = new NoFill();
 
     public abstract T Accept<T>(Visitor<T> visitor);
-    public abstract void Write(XmlWriter xml);
+    public abstract void Write(Xml xml);
 
-    public static void Write(XmlWriter xml, IEnumerable<Fill> fills)
+    public static void Write(Xml xml, IEnumerable<Fill> fills)
     {
         xml.WriteStartElement(XlsxStructure.Styles.Fills.Collection);
         {

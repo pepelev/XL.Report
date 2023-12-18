@@ -1,5 +1,3 @@
-using System.Globalization;
-using System.Xml;
 using XL.Report.Styles.Fills;
 using static XL.Report.XlsxStructure.Styles;
 
@@ -36,9 +34,9 @@ public sealed partial record Style
             return newStyleId;
         }
 
-        public void Write(XmlWriter xml)
+        public void Write(Xml xml)
         {
-            xml.WriteStartElement(RootElement, XlsxStructure.Namespaces.Spreadsheet.Main);
+            using (xml.WriteStartDocument(RootElement, XlsxStructure.Namespaces.Spreadsheet.Main))
             {
                 var orderedFonts = fonts
                     .OrderBy(font => font.Value)
@@ -56,21 +54,19 @@ public sealed partial record Style
                     .Select(pair => pair.Key);
                 Borders.Write(xml, orderedBorders);
 
-                xml.WriteStartElement(CellFormats.StyleFormats);
-                xml.WriteAttributeString(CellFormats.StyleFormatsCount, "1");
+                using (xml.WriteStartElement(CellFormats.StyleFormats))
                 {
-                    xml.WriteStartElement(CellFormats.CellFormat);
-                    xml.WriteAttributeString(CellFormats.NumberFormatIndex, "0");
-                    xml.WriteAttributeString(CellFormats.FontIndex, "0");
-                    xml.WriteAttributeString(CellFormats.FillIndex, "0");
-                    xml.WriteAttributeString(CellFormats.BordersIndex, "0");
-                    xml.WriteEndElement();
+                    xml.WriteAttribute(CellFormats.StyleFormatsCount, "1");
+                    using (xml.WriteStartElement(CellFormats.CellFormat))
+                    {
+                        xml.WriteAttribute(CellFormats.NumberFormatIndex, "0");
+                        xml.WriteAttribute(CellFormats.FontIndex, "0");
+                        xml.WriteAttribute(CellFormats.FillIndex, "0");
+                        xml.WriteAttribute(CellFormats.BordersIndex, "0");
+                    }
                 }
-                xml.WriteEndElement();
 
-                xml.WriteStartElement(CellFormats.Collection);
-                var count = registeredStyles.Count.ToString(CultureInfo.InvariantCulture);
-                xml.WriteAttributeString(CellFormats.CollectionCount, count);
+                using (xml.WriteStartElement(CellFormats.Collection))
                 {
                     var orderedStyles = registeredStyles
                         .OrderBy(pair => pair.Value)
@@ -79,45 +75,43 @@ public sealed partial record Style
 
                     foreach (var style in orderedStyles)
                     {
-                        xml.WriteStartElement(CellFormats.CellFormat);
-                        xml.WriteAttributeString(CellFormats.StyleFormatIndex, "0");
-                        var formatIndex = formats[style.Format];
-                        var fontIndex = fonts[style.Appearance.Font];
-                        var fillIndex = fills[style.Appearance.Fill];
-                        var bordersIndex = borders[style.Appearance.Borders];
-                        xml.WriteAttributeInt(CellFormats.NumberFormatIndex, formatIndex);
-                        xml.WriteAttributeInt(CellFormats.FontIndex, fontIndex);
-                        xml.WriteAttributeInt(CellFormats.FillIndex, fillIndex);
-                        xml.WriteAttributeInt(CellFormats.BordersIndex, bordersIndex);
-
-                        if (formatIndex > 0)
+                        using (xml.WriteStartElement(CellFormats.CellFormat))
                         {
-                            xml.WriteAttributeString(CellFormats.ApplyFormat, "1");
+                            xml.WriteAttribute(CellFormats.StyleFormatIndex, "0");
+                            var formatIndex = formats[style.Format];
+                            var fontIndex = fonts[style.Appearance.Font];
+                            var fillIndex = fills[style.Appearance.Fill];
+                            var bordersIndex = borders[style.Appearance.Borders];
+                            xml.WriteAttributeSpan(CellFormats.NumberFormatIndex, formatIndex);
+                            xml.WriteAttributeSpan(CellFormats.FontIndex, fontIndex);
+                            xml.WriteAttributeSpan(CellFormats.FillIndex, fillIndex);
+                            xml.WriteAttributeSpan(CellFormats.BordersIndex, bordersIndex);
+
+                            if (formatIndex > 0)
+                            {
+                                xml.WriteAttribute(CellFormats.ApplyFormat, "1");
+                            }
+
+                            if (fontIndex > 0)
+                            {
+                                xml.WriteAttribute(CellFormats.ApplyFont, "1");
+                            }
+
+                            if (fillIndex > 0)
+                            {
+                                xml.WriteAttribute(CellFormats.ApplyFill, "1");
+                            }
+
+                            if (bordersIndex > 0)
+                            {
+                                xml.WriteAttribute(CellFormats.ApplyBorders, "1");
+                            }
+
+                            // todo alignment
                         }
-
-                        if (fontIndex > 0)
-                        {
-                            xml.WriteAttributeString(CellFormats.ApplyFont, "1");
-                        }
-
-                        if (fillIndex > 0)
-                        {
-                            xml.WriteAttributeString(CellFormats.ApplyFill, "1");
-                        }
-
-                        if (bordersIndex > 0)
-                        {
-                            xml.WriteAttributeString(CellFormats.ApplyBorders, "1");
-                        }
-
-                        // todo alignment
-
-                        xml.WriteEndElement();
                     }
                 }
-                xml.WriteEndElement();
             }
-            xml.WriteEndElement();
         }
     }
 }

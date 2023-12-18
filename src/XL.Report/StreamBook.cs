@@ -76,164 +76,156 @@ public sealed class StreamBook : Book
         Write("xl/_rels/workbook.xml.rels", WorkbookRels);
     }
 
-    private void Write(string name, Action<XmlWriter> act)
+    private void Write(string name, Action<Xml> act)
     {
         var entry = archive.CreateEntry(name, compressionLevel);
         using var stream = entry.Open();
         var settings = new XmlWriterSettings
         {
-            Encoding = Encoding.UTF8,
+            Encoding = Encoding.UTF8
         };
-        using var xml = XmlWriter.Create(stream, settings);
+        using var xml = new Xml(XmlWriter.Create(stream, settings));
         act(xml);
     }
 
-    private void Workbook(XmlWriter xml)
+    private void Workbook(Xml xml)
     {
-        xml.WriteStartDocument(true);
+        using (xml.WriteStartDocument("workbook", XlsxStructure.Namespaces.Spreadsheet.Main))
         {
-            xml.WriteStartElement("workbook", XlsxStructure.Namespaces.Spreadsheet.Main);
-            xml.WriteAttributeString("xmlns", "r", "", XlsxStructure.Namespaces.OfficeDocuments.Relationships);
+            xml.WriteAttribute("xmlns", "r", XlsxStructure.Namespaces.OfficeDocuments.Relationships);
+            using (xml.WriteStartElement("sheets"))
             {
-                xml.WriteStartElement("sheets");
+                for (var i = 0; i < sheets.Count; i++)
                 {
-                    for (var i = 0; i < sheets.Count; i++)
+                    var sheet = sheets[i];
+                    var id = (i + 1).ToString(CultureInfo.InvariantCulture);
+                    using (xml.WriteStartElement("sheet"))
                     {
-                        var sheet = sheets[i];
-                        var id = (i + 1).ToString(CultureInfo.InvariantCulture);
-                        xml.WriteStartElement("sheet");
-                        xml.WriteAttributeString("name", sheet.Name);
-                        xml.WriteAttributeString("sheetId", id);
-                        xml.WriteAttributeString("r", "id", null, $"rId{id}");
-                        xml.WriteEndElement();
+                        xml.WriteAttribute("name", sheet.Name);
+                        xml.WriteAttribute("sheetId", id);
+                        xml.WriteAttribute("r", "id", $"rId{id}");
                     }
                 }
-                xml.WriteEndElement();
             }
-            xml.WriteEndElement();
         }
     }
 
-    private void SharedStrings(XmlWriter xml)
+    private void SharedStrings(Xml xml)
     {
-        xml.WriteStartDocument(true);
+        using (xml.WriteStartDocument("sst", XlsxStructure.Namespaces.Spreadsheet.Main))
         {
-            xml.WriteStartElement("sst", XlsxStructure.Namespaces.Spreadsheet.Main);
+            var expectedId = new SharedStringId(0);
+            foreach (var (@string, id) in Strings.OrderBy(pair => pair.Id))
             {
-                var expectedId = new SharedStringId(0);
-                foreach (var (@string, id) in Strings.OrderBy(pair => pair.Id))
+                if (id != expectedId)
                 {
-                    if (id != expectedId)
+                    throw new InvalidOperationException();
+                }
+
+                using (xml.WriteStartElement("si"))
+                {
+                    using (xml.WriteStartElement("t"))
                     {
-                        throw new InvalidOperationException();
+                        xml.WriteValue(@string);
                     }
-
-                    xml.WriteStartElement("si");
-                    {
-                        xml.WriteElementString("t", @string);
-                    }
-                    xml.WriteEndElement();
-
-                    expectedId = new SharedStringId(id.Index + 1);
                 }
+
+                expectedId = new SharedStringId(id.Index + 1);
             }
-            xml.WriteEndElement();
         }
     }
 
-    public void ContentTypes(XmlWriter xml)
+    public void ContentTypes(Xml xml)
     {
-        xml.WriteStartDocument(true);
+        using (xml.WriteStartDocument("Types", "http://schemas.openxmlformats.org/package/2006/content-types"))
         {
-            xml.WriteStartElement("Types", "http://schemas.openxmlformats.org/package/2006/content-types");
+            using (xml.WriteStartElement("Default"))
             {
-                xml.WriteStartElement("Default");
-                xml.WriteAttributeString("Extension", "rels");
-                xml.WriteAttributeString("ContentType", "application/vnd.openxmlformats-package.relationships+xml");
-                xml.WriteEndElement();
+                xml.WriteAttribute("Extension", "rels");
+                xml.WriteAttribute("ContentType", "application/vnd.openxmlformats-package.relationships+xml");
+            }
 
-                xml.WriteStartElement("Default");
-                xml.WriteAttributeString("Extension", "xml");
-                xml.WriteAttributeString("ContentType", "application/xml");
-                xml.WriteEndElement();
+            using (xml.WriteStartElement("Default"))
+            {
+                xml.WriteAttribute("Extension", "xml");
+                xml.WriteAttribute("ContentType", "application/xml");
+            }
 
-                xml.WriteStartElement("Override");
-                xml.WriteAttributeString("PartName", "/xl/workbook.xml");
-                xml.WriteAttributeString("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml");
-                xml.WriteEndElement();
+            using (xml.WriteStartElement("Override"))
+            {
+                xml.WriteAttribute("PartName", "/xl/workbook.xml");
+                xml.WriteAttribute("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml");
+            }
 
-                foreach (var builder in sheets)
+            foreach (var builder in sheets)
+            {
+                using (xml.WriteStartElement("Override"))
                 {
-                    xml.WriteStartElement("Override");
-                    xml.WriteAttributeString("PartName", builder.Path.SlashLeadingString());
-                    xml.WriteAttributeString("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml");
-                    xml.WriteEndElement();
+                    xml.WriteAttribute("PartName", builder.Path.SlashLeadingString());
+                    xml.WriteAttribute("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml");
                 }
-
-                xml.WriteStartElement("Override");
-                xml.WriteAttributeString("PartName", "/xl/styles.xml");
-                xml.WriteAttributeString("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml");
-                xml.WriteEndElement();
-
-                xml.WriteStartElement("Override");
-                xml.WriteAttributeString("PartName", "/xl/sharedStrings.xml");
-                xml.WriteAttributeString("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml");
-                xml.WriteEndElement();
             }
-            xml.WriteEndElement();
+
+            using (xml.WriteStartElement("Override"))
+            {
+                xml.WriteAttribute("PartName", "/xl/styles.xml");
+                xml.WriteAttribute("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml");
+            }
+
+            using (xml.WriteStartElement("Override"))
+            {
+                xml.WriteAttribute("PartName", "/xl/sharedStrings.xml");
+                xml.WriteAttribute("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml");
+            }
         }
     }
 
-    public static void Rels(XmlWriter xml)
+    public static void Rels(Xml xml)
     {
-        xml.WriteStartDocument(true);
+        using (xml.WriteStartDocument("Relationships", "http://schemas.openxmlformats.org/package/2006/relationships"))
         {
-            xml.WriteStartElement("Relationships", "http://schemas.openxmlformats.org/package/2006/relationships");
+            using (xml.WriteStartElement("Relationship"))
             {
-                xml.WriteStartElement("Relationship");
-                xml.WriteAttributeString("Id", "rId1");
-                xml.WriteAttributeString("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument");
-                xml.WriteAttributeString("Target", "xl/workbook.xml");
-                xml.WriteEndElement();
+                xml.WriteAttribute("Id", "rId1");
+                xml.WriteAttribute("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument");
+                xml.WriteAttribute("Target", "xl/workbook.xml");
             }
-            xml.WriteEndElement();
         }
     }
 
-    public void WorkbookRels(XmlWriter xml)
+    public void WorkbookRels(Xml xml)
     {
-        xml.WriteStartDocument(true);
+        using (xml.WriteStartDocument("Relationships", "http://schemas.openxmlformats.org/package/2006/relationships"))
         {
-            xml.WriteStartElement("Relationships", "http://schemas.openxmlformats.org/package/2006/relationships");
-            {
-                var id = 1;
+            var id = 1;
 
-                foreach (var sheet in sheets)
+            foreach (var sheet in sheets)
+            {
+                using (xml.WriteStartElement("Relationship"))
                 {
-                    xml.WriteStartElement("Relationship");
-                    xml.WriteAttributeString("Id", $"rId{id.ToString(CultureInfo.InvariantCulture)}");
-                    xml.WriteAttributeString("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet");
-                    xml.WriteAttributeString("Target", sheet.Path.AsString()[3..]); // todo crutch
-                    xml.WriteEndElement();
-
-                    id++;
+                    xml.WriteAttribute("Id", $"rId{id.ToString(CultureInfo.InvariantCulture)}");
+                    xml.WriteAttribute("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet");
+                    xml.WriteAttribute("Target", sheet.Path.AsString()[3..]); // todo crutch
                 }
-
-                xml.WriteStartElement("Relationship");
-                xml.WriteAttributeString("Id", $"rId{id.ToString(CultureInfo.InvariantCulture)}");
-                xml.WriteAttributeString("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles");
-                xml.WriteAttributeString("Target", "styles.xml");
-                xml.WriteEndElement();
 
                 id++;
-
-                xml.WriteStartElement("Relationship");
-                xml.WriteAttributeString("Id", $"rId{id.ToString(CultureInfo.InvariantCulture)}");
-                xml.WriteAttributeString("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings");
-                xml.WriteAttributeString("Target", "sharedStrings.xml");
-                xml.WriteEndElement();
             }
-            xml.WriteEndElement();
+
+            using (xml.WriteStartElement("Relationship"))
+            {
+                xml.WriteAttribute("Id", $"rId{id.ToString(CultureInfo.InvariantCulture)}");
+                xml.WriteAttribute("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles");
+                xml.WriteAttribute("Target", "styles.xml");
+            }
+
+            id++;
+
+            using (xml.WriteStartElement("Relationship"))
+            {
+                xml.WriteAttribute("Id", $"rId{id.ToString(CultureInfo.InvariantCulture)}");
+                xml.WriteAttribute("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings");
+                xml.WriteAttribute("Target", "sharedStrings.xml");
+            }
         }
     }
 

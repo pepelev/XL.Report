@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using System.Text;
+﻿using System.Text;
 using System.Xml;
 using XL.Report.Styles;
 
@@ -9,6 +8,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
 {
     private readonly SheetOptions options;
     private readonly BTreeSlim<int, Row> rows = new();
+    private readonly List<Range> mergedRanges = new();
     private readonly Stack<Range> reductions = new();
     private readonly XmlWriter xml;
     private Range activeRange;
@@ -60,7 +60,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
 
     public override void Merge(Size size, Content content, StyleId? styleId)
     {
-        if (size.HasArea)
+        if (!size.HasArea)
         {
             throw new ArgumentException($"must {nameof(size.HasArea)}", nameof(size));
         }
@@ -72,7 +72,12 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         }
 
         var top = range.Top;
-        var mergeRow = new MergeRow(top, new Interval<int>(range.Left, range.Left + size.Width));
+        var mergeRow = new MergeRow(
+            top,
+            new Interval<int>(range.Left, range.Left + size.Width),
+            content,
+            styleId
+        );
         for (var i = 0; i < size.Height; i++)
         {
             var result = rows.Find(top + i);
@@ -101,6 +106,8 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
                 rows.TryAdd(newRow);
             }
         }
+
+        mergedRanges.Add(new Range(range.LeftTop, size));
     }
 
     public override void PushReduce(Offset offset, Size? newSize = null)
@@ -230,6 +237,20 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
     public void Complete()
     {
         WriteStartOnlyFirstTime();
+
+        xml.WriteEndElement(); // sheetData
+
+        xml.WriteStartElement("mergeCells");
+        {
+            foreach (var range in mergedRanges)
+            {
+                xml.WriteStartElement("mergeCell");
+                xml.WriteAttributeString("ref", range.ToString());
+                xml.WriteEndElement();
+            }
+        }
+        xml.WriteEndElement();
+
         xml.WriteEndDocument();
     }
 
@@ -292,6 +313,12 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
                 throw new InvalidOperationException();
             }
 
+            if (Y == merge.Top)
+            {
+                var cellX = new CellX(merge.Span.LeftInclusive, merge.ToCell());
+                cells.TryAdd(cellX).ThrowOnConflict();
+            }
+
             merges.TryAdd(merge).ThrowOnConflict();
         }
 
@@ -299,9 +326,10 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
     }
 
     // todo pack left and right to shorts
-    private readonly record struct MergeRow(int Top, Interval<int> Span) : IKeyed<int>
+    private readonly record struct MergeRow(int Top, Interval<int> Span, Content Content, StyleId? StyleId) : IKeyed<int>
     {
         int IKeyed<int>.Key => Span.LeftInclusive;
+        public Cell ToCell() => new(Content, StyleId);
     }
 
     // todo pack compact (style? and int (actually short) can be packed into long)

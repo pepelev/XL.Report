@@ -124,7 +124,7 @@ public sealed class BTreeSlim<TKey, T> : IEnumerable<T>
         root = new Node.Leaf();
     }
 
-    public ref struct Iterator
+    public struct Iterator
     {
         private readonly BTreeSlim<TKey, T> tree;
         private Move lastMove;
@@ -302,72 +302,21 @@ public sealed class BTreeSlim<TKey, T> : IEnumerable<T>
 
     public struct Enumerator : IEnumerator<T>
     {
-        // todo Buffer8 is too small
-        private Stack<(Node Node, int Index), Buffer8<(Node Node, int Index)>> stack = new(new Buffer8<(Node Node, int Index)>());
+        private Iterator iterator;
 
-        internal Enumerator(Node root)
+        internal Enumerator(BTreeSlim<TKey, T> tree)
         {
-            Push(root);
+            iterator = tree.CreateIterator();
         }
 
         public bool MoveNext()
         {
-            while (true)
-            {
-                if (stack.IsEmpty)
-                {
-                    return false;
-                }
-
-                ref var current = ref stack.Peek();
-                if (current.Node is Node.Leaf leaf)
-                {
-                    if (current.Index < leaf.Items.Count)
-                    {
-                        Current = leaf.Items.Content[current.Index];
-                        current.Index++;
-                        return true;
-                    }
-
-                    stack.Pop();
-                }
-                else
-                {
-                    var nonLeaf = (Node.NonLeaf)current.Node;
-                    if (current.Index < nonLeaf.Items.Count)
-                    {
-                        Current = nonLeaf.Items.Content[current.Index];
-                        current.Index++;
-                        Push(nonLeaf.Children.Content[current.Index]);
-                        return true;
-                    }
-
-                    stack.Pop();
-                }
-            }
+            iterator.MoveNext();
+            return iterator.State == IteratorState.InsideTree;
         }
 
-        private void Push(Node node)
-        {
-            while (true)
-            {
-                stack.Push((node, 0));
-                if (node is Node.Leaf)
-                {
-                    return;
-                }
-
-                node = ((Node.NonLeaf)node).Children.Content[0];
-            }
-        }
-
-        public void Reset()
-        {
-            throw new NotSupportedException();
-        }
-
-        public T Current { get; private set; } = default!;
-
+        public void Reset() => throw new NotSupportedException();
+        public T Current => iterator.Current;
         object IEnumerator.Current => Current;
 
         public void Dispose()
@@ -596,7 +545,7 @@ public sealed class BTreeSlim<TKey, T> : IEnumerable<T>
         }
     }
 
-    public Enumerator GetEnumerator() => new(root);
+    public Enumerator GetEnumerator() => new(this);
     IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

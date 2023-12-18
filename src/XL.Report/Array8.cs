@@ -328,7 +328,6 @@ public sealed class BTreeSlim<TKey, T> : IEnumerable<T>
             var node = tree.root;
             while (true)
             {
-                m1:
                 if (node is Node.Leaf leaf)
                 {
                     for (var i = 0; i < leaf.Items.Count; i++)
@@ -347,6 +346,7 @@ public sealed class BTreeSlim<TKey, T> : IEnumerable<T>
                 }
 
                 var nonLeaf = (Node.NonLeaf)node;
+                var found = false;
                 for (var i = nonLeaf.Items.Count - 1; i >= 0; i--)
                 {
                     var comparison = key.CompareTo(nonLeaf.Items.Content[i].Key);
@@ -364,12 +364,16 @@ public sealed class BTreeSlim<TKey, T> : IEnumerable<T>
                         }
 
                         node = nonLeaf.Children.Content[i + 1];
-                        goto m1;
+                        found = true;
+                        break;
                     }
                 }
 
-                stack.Push((nonLeaf, 0));
-                node = nonLeaf.Children.Content[0];
+                if (!found)
+                {
+                    stack.Push((nonLeaf, 0));
+                    node = nonLeaf.Children.Content[0];
+                }
             }
         }
 
@@ -379,7 +383,6 @@ public sealed class BTreeSlim<TKey, T> : IEnumerable<T>
             var node = tree.root;
             while (true)
             {
-                m1:
                 if (node is Node.Leaf leaf)
                 {
                     for (var i = leaf.Items.Count - 1; i >= 0; i--)
@@ -398,6 +401,7 @@ public sealed class BTreeSlim<TKey, T> : IEnumerable<T>
                 }
 
                 var nonLeaf = (Node.NonLeaf)node;
+                var found = false;
                 for (var i = 0; i < nonLeaf.Items.Count; i++)
                 {
                     var comparison = nonLeaf.Items.Content[i].Key.CompareTo(key);
@@ -415,12 +419,16 @@ public sealed class BTreeSlim<TKey, T> : IEnumerable<T>
                         }
 
                         node = nonLeaf.Children.Content[i];
-                        goto m1;
+                        found = true;
+                        break;
                     }
                 }
 
-                stack.Push((nonLeaf, nonLeaf.Items.Count - 1));
-                node = nonLeaf.Children.Content[nonLeaf.Items.Count];
+                if (!found)
+                {
+                    stack.Push((nonLeaf, nonLeaf.Items.Count - 1));
+                    node = nonLeaf.Children.Content[nonLeaf.Items.Count];
+                }
             }
         }
     }

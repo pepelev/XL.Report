@@ -23,7 +23,7 @@ public sealed record Font(
         {
             using (xml.WriteStartElement(Fonts.Size))
             {
-                xml.WriteAttributeSpan(Fonts.SizeValue, Size, "N3");
+                xml.WriteAttribute(Fonts.SizeValue, Size, "N3");
             }
 
             if (Color is { } color)

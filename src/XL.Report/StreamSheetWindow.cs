@@ -137,12 +137,12 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         int Write()
         {
             var mostDownY = activeRange.LeftTop.Y;
-            
+
             foreach (var row in rows)
             {
                 using (xml.WriteStartElement(XlsxStructure.Worksheet.Row))
                 {
-                    xml.WriteAttributeSpan("r", row.Y);
+                    xml.WriteAttribute("r", row.Y);
                     foreach (var (x, content) in row)
                     {
                         var location = new Location(x, row.Y);
@@ -191,12 +191,12 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
                     {
                         if (freeze.FreezeByX > 0)
                         {
-                            xml.WriteAttributeSpan("xSplit", freeze.FreezeByX);
+                            xml.WriteAttribute("xSplit", freeze.FreezeByX);
                         }
 
                         if (freeze.FreezeByY > 0)
                         {
-                            xml.WriteAttributeSpan("ySplit", freeze.FreezeByY);
+                            xml.WriteAttribute("ySplit", freeze.FreezeByY);
                         }
 
                         var topLeftCell = new Location(freeze.FreezeByX + 1, freeze.FreezeByY + 1);
@@ -215,9 +215,9 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
                 {
                     using (xml.WriteStartElement("col"))
                     {
-                        xml.WriteAttributeSpan("min", x);
-                        xml.WriteAttributeSpan("max", x);
-                        xml.WriteAttributeSpan("width", width, "N6");
+                        xml.WriteAttribute("min", x);
+                        xml.WriteAttribute("max", x);
+                        xml.WriteAttribute("width", width, "N6");
                     }
                 }
             }
@@ -343,7 +343,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
 
                 if (StyleId is { } styleId)
                 {
-                    xml.WriteAttributeSpan(XlsxStructure.Worksheet.Style, styleId.Index);
+                    xml.WriteAttribute(XlsxStructure.Worksheet.Style, styleId.Index);
                 }
 
                 Content.Write(xml);

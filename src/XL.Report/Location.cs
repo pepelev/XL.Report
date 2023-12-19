@@ -5,7 +5,7 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 
 public readonly struct Location
-    : IEquatable<Location>, IAllocationFreeWritable
+    : IEquatable<Location>, ISpanFormattable
 #if NET7_0_OR_GREATER
     , IParsable<Location>
 #endif
@@ -87,51 +87,6 @@ public readonly struct Location
     private bool IsCorrect() => MinX <= X && X <= MaxX &&
                                 MinY <= Y && Y <= MaxY;
 
-    // todo test
-    public bool TryFormat(Span<char> destination, out int charsWritten)
-    {
-        if (IsCorrect())
-        {
-            var xWritten = TryFormatCorrectX((uint)X, destination, out var xCharsWritten);
-            destination = destination[xCharsWritten..];
-            var yWritten = Y.TryFormat(
-                destination,
-                out var yCharsWritten,
-                ReadOnlySpan<char>.Empty,
-                CultureInfo.InvariantCulture
-            );
-
-            charsWritten = xCharsWritten + yCharsWritten;
-            return xWritten && yWritten;
-        }
-        else
-        {
-            var xWritten = X.TryFormat(
-                destination,
-                out var xCharsWritten,
-                ReadOnlySpan<char>.Empty,
-                CultureInfo.InvariantCulture
-            );
-            destination = destination[xCharsWritten..];
-            if (!", ".TryCopyTo(destination))
-            {
-                charsWritten = 0;
-                return false;
-            }
-
-            destination = destination[2..];
-            var yWritten = Y.TryFormat(
-                destination,
-                out var yCharsWritten,
-                ReadOnlySpan<char>.Empty,
-                CultureInfo.InvariantCulture
-            );
-
-            charsWritten = xCharsWritten + 2 + yCharsWritten;
-            return xWritten && yWritten;
-        }
-    }
-
     private static bool TryFormatCorrectX(uint x, Span<char> destination, out int charsWritten)
     {
         var xSize = x switch
@@ -164,6 +119,30 @@ public readonly struct Location
         : $"{X}, {Y}";
 
     public override string ToString() => AsString();
+    public string ToString(string? format, IFormatProvider? formatProvider) => AsString();
+
+    // todo test
+    public bool TryFormat(
+        Span<char> destination,
+        out int charsWritten,
+        ReadOnlySpan<char> format,
+        IFormatProvider? provider)
+    {
+        if (IsCorrect())
+        {
+            return FormatContext.Start
+                .Write(ref destination, (uint)X, TryFormatCorrectX)
+                .Write(ref destination, X, ReadOnlySpan<char>.Empty, CultureInfo.InvariantCulture)
+                .Deconstruct(out charsWritten);
+        }
+
+        return FormatContext.Start
+            .Write(ref destination, X, ReadOnlySpan<char>.Empty, CultureInfo.InvariantCulture)
+            .Write(ref destination, ", ")
+            .Write(ref destination, Y, ReadOnlySpan<char>.Empty, CultureInfo.InvariantCulture)
+            .Deconstruct(out charsWritten);
+    }
+
     private string PrintCorrectValue() => PrintX() + PrintY();
     private string PrintX() => PrintX((uint) X);
 

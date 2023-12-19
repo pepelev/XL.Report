@@ -22,7 +22,7 @@ public static class SharedString
             {
                 using (xml.WriteStartElement("v"))
                 {
-                    xml.WriteValueSpan(id.Index);
+                    xml.WriteValue(id.Index);
                 }
             }
         }

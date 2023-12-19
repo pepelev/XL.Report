@@ -82,10 +82,10 @@ public sealed partial record Style
                             var fontIndex = fonts[style.Appearance.Font];
                             var fillIndex = fills[style.Appearance.Fill];
                             var bordersIndex = borders[style.Appearance.Borders];
-                            xml.WriteAttributeSpan(CellFormats.NumberFormatIndex, formatIndex);
-                            xml.WriteAttributeSpan(CellFormats.FontIndex, fontIndex);
-                            xml.WriteAttributeSpan(CellFormats.FillIndex, fillIndex);
-                            xml.WriteAttributeSpan(CellFormats.BordersIndex, bordersIndex);
+                            xml.WriteAttribute(CellFormats.NumberFormatIndex, formatIndex);
+                            xml.WriteAttribute(CellFormats.FontIndex, fontIndex);
+                            xml.WriteAttribute(CellFormats.FillIndex, fillIndex);
+                            xml.WriteAttribute(CellFormats.BordersIndex, bordersIndex);
 
                             if (formatIndex > 0)
                             {

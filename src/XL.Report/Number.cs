@@ -16,7 +16,7 @@ public sealed class Number : Content
     {
         using (xml.WriteStartElement(value))
         {
-            xml.WriteValueSpan(content);
+            xml.WriteValue(content);
         }
     }
 }

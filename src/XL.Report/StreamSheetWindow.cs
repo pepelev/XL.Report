@@ -277,11 +277,11 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
             var mergeBoundIterator = merges.RightLowerBound(span.LeftInclusive);
             while (mergeBoundIterator.State == IteratorState.InsideTree)
             {
-                if (mergeBoundIterator.Current.Span.ToRightOf(span))
+                if (mergeBoundIterator.Current.Span.RightThan(span))
                 {
                     break;
                 }
-                
+
                 if (mergeBoundIterator.Current.Span.Intersect(span))
                 {
                     return false;

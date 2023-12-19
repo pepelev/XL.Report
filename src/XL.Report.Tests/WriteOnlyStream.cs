@@ -12,12 +12,10 @@ public sealed class WriteOnlyStream : Stream
     public override void Close()
     {
         stream.Close();
-        stream.Close();
     }
 
     public override async ValueTask DisposeAsync()
     {
-        await stream.DisposeAsync().ConfigureAwait(false);
         await stream.DisposeAsync().ConfigureAwait(false);
     }
 

@@ -17,8 +17,10 @@ public sealed class Examples
     }
 
     private Stream ResultStream() => new WriteOnlyStream(
-        new FileStream($"{resultsDirectory}/{TestName}.xlsx", FileMode.Create)
+        new FileStream(Path(TestName), FileMode.Create)
     );
+
+    private static string Path(string testName) => $"{resultsDirectory}/{testName}.xlsx";
 
     [Test]
     public void Simplest_Book()
@@ -152,6 +154,21 @@ public sealed class Examples
 
             return builder.ToString();
         }
+    }
+
+    [Test]
+    public void Inspect_Archive_Read([Values(nameof(Large))] string testName)
+    {
+        using var file = new FileStream(Path(testName), FileMode.Open);
+        Console.WriteLine("Before open");
+        using var zipArchive = new ZipArchive(new ReadTracingStream(file));
+        Console.WriteLine("After open");
+        var entry = zipArchive.Entries.ElementAt(4);
+        Console.WriteLine("After entry select");
+        var stream = entry.Open();
+        Console.WriteLine("After entry open");
+        _ = stream.Read(new byte[1024]);
+        Console.WriteLine("After entry read");
     }
 
     private static T[] Array<T>(int count, [InstantHandle] Func<T> factory)

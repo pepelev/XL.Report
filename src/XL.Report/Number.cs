@@ -1,5 +1,3 @@
-using System.Xml;
-
 namespace XL.Report;
 
 public sealed class Number : Content
@@ -14,12 +12,11 @@ public sealed class Number : Content
         this.content = content;
     }
 
-    public override void Write(XmlWriter xml)
+    public override void Write(Xml xml)
     {
-        xml.WriteStartElement(value);
+        using (xml.WriteStartElement(value))
         {
             xml.WriteValue(content);
         }
-        xml.WriteEndElement();
     }
 }

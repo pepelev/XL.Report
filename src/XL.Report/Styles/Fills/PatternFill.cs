@@ -1,6 +1,4 @@
-﻿using System.Xml;
-
-namespace XL.Report.Styles.Fills;
+﻿namespace XL.Report.Styles.Fills;
 
 public sealed class PatternFill : Fill, IEquatable<PatternFill>
 {
@@ -37,7 +35,7 @@ public sealed class PatternFill : Fill, IEquatable<PatternFill>
         return visitor.Visit(this);
     }
 
-    public override void Write(XmlWriter xml)
+    public override void Write(Xml xml)
     {
         throw new NotImplementedException();
     }

@@ -1,5 +1,4 @@
 ﻿using System.Globalization;
-using System.Xml;
 using static XL.Report.XlsxStructure.Styles;
 
 namespace XL.Report.Styles;
@@ -18,41 +17,42 @@ public sealed record Font(
         FontStyle.Regular
     );
 
-    public void Write(XmlWriter xml)
+    public void Write(Xml xml)
     {
-        xml.WriteStartElement(Fonts.Font);
+        using (xml.WriteStartElement(Fonts.Font))
         {
-            xml.WriteStartElement(Fonts.Size);
-            xml.WriteAttributeString(Fonts.SizeValue, Size.ToString("N3", CultureInfo.InvariantCulture));
-            xml.WriteEndElement();
+            using (xml.WriteStartElement(Fonts.Size))
+            {
+                xml.WriteAttribute(Fonts.SizeValue, Size, "N3");
+            }
 
             if (Color is { } color)
             {
-                xml.WriteStartElement(Fonts.Color);
-                xml.WriteAttributeString(Fonts.ColorRgb, color.ToRGBHex());
-                xml.WriteEndElement();
+                using (xml.WriteStartElement(Fonts.Color))
+                {
+                    // todo print color allocation free
+                    xml.WriteAttribute(Fonts.ColorRgb, color.ToRGBHex());
+                }
             }
 
-            xml.WriteStartElement(Fonts.Name);
-            xml.WriteAttributeString(Fonts.NameValue, Family);
-            xml.WriteEndElement();
+            using (xml.WriteStartElement(Fonts.Name))
+            {
+                xml.WriteAttribute(Fonts.NameValue, Family);
+            }
 
             // todo write Style
         }
-        xml.WriteEndElement();
     }
 
-    public static void Write(XmlWriter xml, IReadOnlyCollection<Font> fonts)
+    public static void Write(Xml xml, IReadOnlyCollection<Font> fonts)
     {
-        xml.WriteStartElement(Fonts.Collection);
-        xml.WriteAttributeString(Fonts.CollectionCount, fonts.Count.ToString(CultureInfo.InvariantCulture));
+        using (xml.WriteStartElement(Fonts.Collection))
         {
             foreach (var font in fonts)
             {
                 font.Write(xml);
             }
         }
-        xml.WriteEndElement();
     }
 
     public override string ToString()

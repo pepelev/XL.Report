@@ -1,13 +1,11 @@
 namespace XL.Report;
 
 public readonly struct Range
-    : IEquatable<Range>
+    : IEquatable<Range>, ISpanFormattable
 #if NET7_0_OR_GREATER
     , IParsable<Range>
 #endif
 {
-    public override string ToString() => $"{LeftTop}:{RightBottom}";
-
     public static Range EntireSheet => new(
         new Location(Location.MinX, Location.MinY),
         new Size(
@@ -193,5 +191,22 @@ public readonly struct Range
     {
         return Contains(range.LeftTop) &&
                Contains(range.RightBottom);
+    }
+
+    public string AsString() => $"{LeftTop}:{RightBottom}";
+    public override string ToString() => AsString();
+    public string ToString(string? format, IFormatProvider? formatProvider) => AsString();
+
+    public bool TryFormat(
+        Span<char> destination,
+        out int charsWritten,
+        ReadOnlySpan<char> format,
+        IFormatProvider? provider)
+    {
+        return FormatContext.Start
+            .Write(ref destination, LeftTop)
+            .Write(ref destination, ":")
+            .Write(ref destination, RightBottom)
+            .Deconstruct(out charsWritten);
     }
 }

@@ -1,6 +1,4 @@
-﻿using System.Xml;
-
-namespace XL.Report;
+﻿namespace XL.Report;
 
 public static class SharedString
 {
@@ -13,15 +11,19 @@ public static class SharedString
             this.id = id;
         }
 
-        public override void Write(XmlWriter xml)
+        public override void Write(Xml xml)
         {
-            xml.WriteAttributeString("t", "s");
+            Write(xml, id);
+        }
+
+        internal static void Write(Xml xml, SharedStringId id)
+        {
+            xml.WriteAttribute("t", "s");
             {
-                xml.WriteStartElement("v");
+                using (xml.WriteStartElement("v"))
                 {
                     xml.WriteValue(id.Index);
                 }
-                xml.WriteEndElement();
             }
         }
     }
@@ -37,11 +39,10 @@ public static class SharedString
             this.sharedStrings = sharedStrings;
         }
 
-        public override void Write(XmlWriter xml)
+        public override void Write(Xml xml)
         {
             var id = sharedStrings.ForceRegister(content);
-            var innerContent = new ById(id);
-            innerContent.Write(xml);
+            ById.Write(xml, id);
         }
     }
 }

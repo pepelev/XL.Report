@@ -1,6 +1,4 @@
-﻿using System.Xml;
-
-namespace XL.Report;
+﻿namespace XL.Report;
 
 public sealed class String : Content
 {
@@ -13,12 +11,15 @@ public sealed class String : Content
         this.sharedStrings = sharedStrings;
     }
 
-    public override void Write(XmlWriter xml)
+    public override void Write(Xml xml)
     {
-        Content innerContent = sharedStrings.TryRegister(content) is { } id
-            ? new SharedString.ById(id)
-            : new InlineString(content);
-
-        innerContent.Write(xml);
+        if (sharedStrings.TryRegister(content) is { } id)
+        {
+            SharedString.ById.Write(xml, id);
+        }
+        else
+        {
+            InlineString.Write(xml, content);
+        }
     }
 }

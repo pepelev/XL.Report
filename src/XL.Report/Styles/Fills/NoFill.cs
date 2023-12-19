@@ -1,6 +1,4 @@
-﻿using System.Xml;
-
-namespace XL.Report.Styles.Fills;
+﻿namespace XL.Report.Styles.Fills;
 
 public sealed class NoFill : Fill, IEquatable<NoFill>
 {
@@ -29,14 +27,14 @@ public sealed class NoFill : Fill, IEquatable<NoFill>
         return visitor.Visit(this);
     }
 
-    public override void Write(XmlWriter xml)
+    public override void Write(Xml xml)
     {
-        xml.WriteStartElement(XlsxStructure.Styles.Fills.Fill);
+        using (xml.WriteStartElement(XlsxStructure.Styles.Fills.Fill))
         {
-            xml.WriteStartElement(XlsxStructure.Styles.Fills.Pattern);
-            xml.WriteAttributeString(XlsxStructure.Styles.Fills.PatternType, "none");
-            xml.WriteEndElement();
+            using (xml.WriteStartElement(XlsxStructure.Styles.Fills.Pattern))
+            {
+                xml.WriteAttribute(XlsxStructure.Styles.Fills.PatternType, "none");
+            }
         }
-        xml.WriteEndElement();
     }
 }

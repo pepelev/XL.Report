@@ -1,6 +1,4 @@
-﻿using System.Xml;
-
-namespace XL.Report.Styles.Fills;
+﻿namespace XL.Report.Styles.Fills;
 
 public sealed class SolidFill : Fill, IEquatable<SolidFill>
 {
@@ -31,7 +29,7 @@ public sealed class SolidFill : Fill, IEquatable<SolidFill>
         return visitor.Visit(this);
     }
 
-    public override void Write(XmlWriter xml)
+    public override void Write(Xml xml)
     {
         throw new NotImplementedException();
     }

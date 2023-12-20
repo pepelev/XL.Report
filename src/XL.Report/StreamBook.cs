@@ -7,11 +7,54 @@ using XL.Report.Styles;
 
 namespace XL.Report;
 
+public sealed class Hyperlinks
+{
+    public sealed record Hyperlink<T>(Range Range, T Target, string? Tooltip);
+
+    private readonly Book.SheetBuilder sheet;
+    private readonly List<Hyperlink<string>> urlHyperlinks = new();
+    private readonly List<Hyperlink<string>> definedNameHyperlinks = new();
+    private readonly List<Hyperlink<Range>> thisSheetRangeHyperlinks = new();
+    private readonly List<Hyperlink<SheetRelated<Range>>> rangeHyperlinks = new();
+
+    public void WriteSheetPart(Xml xml)
+    {
+        // if (not empty)
+        using (xml.WriteStartElement("hyperlinks"))
+        {
+            foreach (var (range, target, tooltip) in thisSheetRangeHyperlinks)
+            {
+                using (xml.WriteStartElement("hyperlink"))
+                {
+                    xml.WriteAttribute("ref", range);
+                    xml.WriteAttribute("location", new SheetRelated<Range>(sheet.Name, target).ToFormattable());
+                    if (tooltip != null)
+                    {
+                        xml.WriteAttribute("tooltip", tooltip);
+                    }
+                }
+            }
+
+            
+        }
+    }
+
+    public bool RequireRelsPart => throw new NotImplementedException();
+
+    public void WriteRelsPart(Xml xml)
+    {
+        asdad
+    }
+}
+
 public sealed class StreamBook : Book
 {
+    private sealed record DefinedName(string Id, string? Comment, StreamSheetBuilder Sheet, Range Range);
+
     private readonly ZipArchive archive;
     private readonly CompressionLevel compressionLevel;
     private readonly List<StreamSheetBuilder> sheets = new();
+    private readonly Dictionary<string, DefinedName> definedNames = new();
 
     public StreamBook(Stream output, CompressionLevel compressionLevel, bool leaveOpen)
         : this(
@@ -45,15 +88,22 @@ public sealed class StreamBook : Book
         archive.Dispose();
     }
 
-    public override SheetBuilder OpenSheet(string name, SheetOptions options)
+    public override SheetBuilder CreateSheet(string name, SheetOptions options)
     {
         EnsureThereIsNoCurrentSheet();
 
         var path = new SheetPath(sheets.Count);
         var entry = archive.CreateEntry(path.AsString(), compressionLevel);
-        var builder = new StreamSheetBuilder(path, name, entry, options);
+        var builder = new StreamSheetBuilder(this, path, name, entry, options);
         sheets.Add(builder);
         return builder;
+    }
+
+    private void DefineName(StreamSheetBuilder sheet, string name, Range range, string? comment = null)
+    {
+        // todo check name(id) with rules
+        var definedName = new DefinedName(name, comment, sheet, range);
+        definedNames.Add(name, definedName);
     }
 
     private void EnsureThereIsNoCurrentSheet()
@@ -95,6 +145,7 @@ public sealed class StreamBook : Book
             xml.WriteAttribute("xmlns", "r", XlsxStructure.Namespaces.OfficeDocuments.Relationships);
             using (xml.WriteStartElement("sheets"))
             {
+                // todo check zero sheets
                 for (var i = 0; i < sheets.Count; i++)
                 {
                     var sheet = sheets[i];
@@ -251,16 +302,24 @@ public sealed class StreamBook : Book
 
     private sealed class StreamSheetBuilder : SheetBuilder
     {
+        
+        private readonly StreamBook book;
         private readonly Stream entryStream;
         private readonly StreamSheetWindow window;
+        private readonly List<Hyperlink<string>> urlHyperlinks = new();
+        private readonly List<Hyperlink<string>> definedNameHyperlinks = new();
+        private readonly List<Hyperlink<Range>> thisSheetRangeHyperlinks = new();
+        private readonly List<Hyperlink<SheetRelated<Range>>> rangeHyperlinks = new();
         private volatile bool open = true;
 
         public StreamSheetBuilder(
+            StreamBook book,
             SheetPath path,
             string name,
             ZipArchiveEntry entry,
             SheetOptions options)
         {
+            this.book = book;
             Path = path;
             Name = name;
             entryStream = entry.Open();
@@ -285,6 +344,36 @@ public sealed class StreamBook : Book
             var result = unit.Write(window);
             window.Flush();
             return result;
+        }
+
+        public override void DefineName(string name, Range range, string? comment = null)
+        {
+            book.DefineName(this, name, range, comment);
+        }
+
+        // todo check range not overlaps
+        public override void AddHyperlink(Range range, string url, string? tooltip = null)
+        {
+            var hyperlink = new Hyperlink<string>(range, url, tooltip);
+            urlHyperlinks.Add(hyperlink);
+        }
+
+        public override void AddHyperlinkToDefinedName(Range range, string name, string? tooltip = null)
+        {
+            var hyperlink = new Hyperlink<string>(range, name, tooltip);
+            definedNameHyperlinks.Add(hyperlink);
+        }
+
+        public override void AddHyperlinkToRange(Range range, Range target, string? tooltip = null)
+        {
+            var hyperlink = new Hyperlink<Range>(range, target, tooltip);
+            thisSheetRangeHyperlinks.Add(hyperlink);
+        }
+
+        public override void AddHyperlinkToRange(Range range, SheetRelated<Range> target, string? tooltip = null)
+        {
+            var hyperlink = new Hyperlink<SheetRelated<Range>>(range, target, tooltip);
+            rangeHyperlinks.Add(hyperlink);
         }
 
         public override void Complete()

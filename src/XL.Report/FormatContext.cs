@@ -11,7 +11,7 @@ internal readonly record struct FormatContext(bool Success, int CharsWritten)
         ref Span<char> destination,
         T value,
         ReadOnlySpan<char> format,
-        IFormatProvider formatProvider) where T : ISpanFormattable
+        IFormatProvider? formatProvider) where T : ISpanFormattable
     {
         if (!Success)
         {

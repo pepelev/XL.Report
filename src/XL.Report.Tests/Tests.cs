@@ -30,6 +30,9 @@ public sealed class Tests
         - column and row styles,
         - many styles within one cell
         - merged cells
+        - netstandard2.1 support
+        - reorder sheets
+        - formulas
      */
 
     [Test]
@@ -43,7 +46,7 @@ public sealed class Tests
             leaveOpen: false
         );
 
-        using (var sheet = book.OpenSheet("Prototype", SheetOptions.Default))
+        using (var sheet = book.CreateSheet("Prototype", SheetOptions.Default))
         {
             var bigRed = new Style(
                 new Appearance(
@@ -64,7 +67,7 @@ public sealed class Tests
             sheet.Complete();
         }
 
-        using (var sheet = book.OpenSheet("Prototype 2", SheetOptions.Default))
+        using (var sheet = book.CreateSheet("Prototype 2", SheetOptions.Default))
         {
             var bigRed = new Style(
                 new Appearance(

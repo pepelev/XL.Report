@@ -26,7 +26,7 @@ public sealed class Examples
     public void Simplest_Book()
     {
         using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
-        using (var sheet = book.OpenSheet(TestName, SheetOptions.Default))
+        using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
         {
             IUnit<Location> cell = new Cell(new Number(42));
             sheet.WriteRow(cell);
@@ -41,7 +41,7 @@ public sealed class Examples
     {
         using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
         var styles = book.Styles;
-        using (var sheet = book.OpenSheet(TestName, SheetOptions.Default))
+        using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
         {
             var times = Style.Default.WithFontFamily("Times New Roman");
             var row = new Row(
@@ -77,7 +77,7 @@ public sealed class Examples
 
         for (var i = 0; i < 10; i++)
         {
-            using var sheet = book.OpenSheet($"{TestName} {i + 1}", SheetOptions.Default);
+            using var sheet = book.CreateSheet($"{TestName} {i + 1}", SheetOptions.Default);
             var row = new Row(
                 new Cell(new InlineString("Sheet index:")),
                 new Cell(new Number(i))
@@ -94,7 +94,7 @@ public sealed class Examples
     {
         using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
 
-        using (var sheet = book.OpenSheet(TestName, SheetOptions.Default))
+        using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
         {
             var row = new Merge(
                 new InlineString("Merged cell"),
@@ -116,7 +116,7 @@ public sealed class Examples
 
         using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
 
-        using (var sheet = book.OpenSheet(TestName, SheetOptions.Default))
+        using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
         {
             for (var i = 0; i < 100_000; i++)
             {

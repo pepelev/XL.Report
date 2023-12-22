@@ -228,7 +228,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         return started.Value;
     }
 
-    public void Complete()
+    public void Complete(XmlHyperlinks hyperlinks)
     {
         var (document, sheetData) = WriteStartOnlyFirstTime();
         sheetData.Dispose();
@@ -247,6 +247,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
             }
         }
 
+        hyperlinks.WriteSheetPart(xml);
         document.Dispose();
     }
 

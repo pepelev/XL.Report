@@ -18,14 +18,7 @@ public abstract class Book : IDisposable
         public abstract void Dispose();
         public abstract T WriteRow<T>(IUnit<T> unit);
         public abstract void DefineName(string name, Range range, string? comment = null);
-
-        // link = url | range
-        // url = http(s) | file | mail
-        // range = defined-name | range
-        public abstract void AddHyperlink(Range range, string url, string? tooltip = null);
-        public abstract void AddHyperlinkToDefinedName(Range range, string name, string? tooltip = null);
-        public abstract void AddHyperlinkToRange(Range range, Range target, string? tooltip = null);
-        public abstract void AddHyperlinkToRange(Range range, SheetRelated<Range> target, string? tooltip = null);
+        public abstract Hyperlinks Hyperlinks { get; }
         public abstract void Complete();
     }
 

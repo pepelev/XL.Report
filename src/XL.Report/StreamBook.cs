@@ -7,46 +7,6 @@ using XL.Report.Styles;
 
 namespace XL.Report;
 
-public sealed class Hyperlinks
-{
-    public sealed record Hyperlink<T>(Range Range, T Target, string? Tooltip);
-
-    private readonly Book.SheetBuilder sheet;
-    private readonly List<Hyperlink<string>> urlHyperlinks = new();
-    private readonly List<Hyperlink<string>> definedNameHyperlinks = new();
-    private readonly List<Hyperlink<Range>> thisSheetRangeHyperlinks = new();
-    private readonly List<Hyperlink<SheetRelated<Range>>> rangeHyperlinks = new();
-
-    public void WriteSheetPart(Xml xml)
-    {
-        // if (not empty)
-        using (xml.WriteStartElement("hyperlinks"))
-        {
-            foreach (var (range, target, tooltip) in thisSheetRangeHyperlinks)
-            {
-                using (xml.WriteStartElement("hyperlink"))
-                {
-                    xml.WriteAttribute("ref", range);
-                    xml.WriteAttribute("location", new SheetRelated<Range>(sheet.Name, target).ToFormattable());
-                    if (tooltip != null)
-                    {
-                        xml.WriteAttribute("tooltip", tooltip);
-                    }
-                }
-            }
-
-            
-        }
-    }
-
-    public bool RequireRelsPart => throw new NotImplementedException();
-
-    public void WriteRelsPart(Xml xml)
-    {
-        asdad
-    }
-}
-
 public sealed class StreamBook : Book
 {
     private sealed record DefinedName(string Id, string? Comment, StreamSheetBuilder Sheet, Range Range);
@@ -93,15 +53,19 @@ public sealed class StreamBook : Book
         EnsureThereIsNoCurrentSheet();
 
         var path = new SheetPath(sheets.Count);
-        var entry = archive.CreateEntry(path.AsString(), compressionLevel);
-        var builder = new StreamSheetBuilder(this, path, name, entry, options);
+        var builder = new StreamSheetBuilder(this, path, name, options);
         sheets.Add(builder);
         return builder;
     }
 
+    private ZipArchiveEntry CreateEntry(string path)
+    {
+        return archive.CreateEntry(path, compressionLevel);
+    }
+
     private void DefineName(StreamSheetBuilder sheet, string name, Range range, string? comment = null)
     {
-        // todo check name(id) with rules
+        // todo check name(id) with rules and uniq
         var definedName = new DefinedName(name, comment, sheet, range);
         definedNames.Add(name, definedName);
     }
@@ -155,6 +119,27 @@ public sealed class StreamBook : Book
                         xml.WriteAttribute("name", sheet.Name);
                         xml.WriteAttribute("sheetId", id);
                         xml.WriteAttribute("r", "id", $"rId{id}");
+                    }
+                }
+            }
+
+            if (definedNames.Count > 0)
+            {
+                using (xml.WriteStartElement("definedNames"))
+                {
+                    foreach (var (id, comment, streamSheetBuilder, range) in definedNames.Values)
+                    {
+                        using (xml.WriteStartElement("definedName"))
+                        {
+                            xml.WriteAttribute("name", id);
+                            if (comment != null)
+                            {
+                                xml.WriteAttribute("commend", comment);
+                            }
+
+                            var value = new SheetRelated<Range>(streamSheetBuilder.Name, range);
+                            xml.WriteValue(value.ToFormattable());
+                        }
                     }
                 }
             }
@@ -297,33 +282,36 @@ public sealed class StreamBook : Book
         }
 
         [Pure]
+        public string RelsAsString()
+        {
+            var number = (index + 1).ToString(CultureInfo.InvariantCulture);
+            return $"xl/worksheets/_rels/sheet{number}.xml.rels";
+        }
+
+        [Pure]
         public string SlashLeadingString() => $"/{AsString()}";
     }
 
     private sealed class StreamSheetBuilder : SheetBuilder
     {
-        
         private readonly StreamBook book;
-        private readonly Stream entryStream;
         private readonly StreamSheetWindow window;
-        private readonly List<Hyperlink<string>> urlHyperlinks = new();
-        private readonly List<Hyperlink<string>> definedNameHyperlinks = new();
-        private readonly List<Hyperlink<Range>> thisSheetRangeHyperlinks = new();
-        private readonly List<Hyperlink<SheetRelated<Range>>> rangeHyperlinks = new();
+        private readonly XmlHyperlinks hyperlinks;
         private volatile bool open = true;
 
         public StreamSheetBuilder(
             StreamBook book,
             SheetPath path,
             string name,
-            ZipArchiveEntry entry,
             SheetOptions options)
         {
             this.book = book;
             Path = path;
             Name = name;
-            entryStream = entry.Open();
+            var entry = book.CreateEntry(path.AsString());
+            var entryStream = entry.Open();
             window = new StreamSheetWindow(entryStream, options);
+            hyperlinks = new XmlHyperlinks(this);
         }
 
         public SheetPath Path { get; }
@@ -351,34 +339,27 @@ public sealed class StreamBook : Book
             book.DefineName(this, name, range, comment);
         }
 
-        // todo check range not overlaps
-        public override void AddHyperlink(Range range, string url, string? tooltip = null)
-        {
-            var hyperlink = new Hyperlink<string>(range, url, tooltip);
-            urlHyperlinks.Add(hyperlink);
-        }
-
-        public override void AddHyperlinkToDefinedName(Range range, string name, string? tooltip = null)
-        {
-            var hyperlink = new Hyperlink<string>(range, name, tooltip);
-            definedNameHyperlinks.Add(hyperlink);
-        }
-
-        public override void AddHyperlinkToRange(Range range, Range target, string? tooltip = null)
-        {
-            var hyperlink = new Hyperlink<Range>(range, target, tooltip);
-            thisSheetRangeHyperlinks.Add(hyperlink);
-        }
-
-        public override void AddHyperlinkToRange(Range range, SheetRelated<Range> target, string? tooltip = null)
-        {
-            var hyperlink = new Hyperlink<SheetRelated<Range>>(range, target, tooltip);
-            rangeHyperlinks.Add(hyperlink);
-        }
+        public override Hyperlinks Hyperlinks => hyperlinks;
 
         public override void Complete()
         {
-            window.Complete();
+            window.Complete(hyperlinks);
+            window.Dispose();
+            if (hyperlinks.RequireRelsPart)
+            {
+                var entry = book.CreateEntry(Path.RelsAsString());
+                using var stream = entry.Open();
+                var settings = new XmlWriterSettings
+                {
+                    Encoding = Encoding.UTF8,
+                    CloseOutput = true
+                };
+                using var xml = new Xml(XmlWriter.Create(stream, settings));
+                using (xml.WriteStartDocument("Relationships", "http://schemas.openxmlformats.org/package/2006/relationships"))
+                {
+                    hyperlinks.WriteRelsPart(xml);
+                }
+            }
         }
     }
 }

@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace XL.Report;
 
 public readonly struct Range
@@ -123,6 +125,8 @@ public readonly struct Range
 
         throw new ArgumentException();
     }
+
+    public static Range Parse(string input) => Parse(input, CultureInfo.InvariantCulture);
 
     private int TopHeight => (Size.Height + 1) >> 1;
     private int BottomHeight => Size.Height >> 1;

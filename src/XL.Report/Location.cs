@@ -132,7 +132,7 @@ public readonly struct Location
         {
             return FormatContext.Start
                 .Write(ref destination, (uint)X, TryFormatCorrectX)
-                .Write(ref destination, X, ReadOnlySpan<char>.Empty, CultureInfo.InvariantCulture)
+                .Write(ref destination, Y, ReadOnlySpan<char>.Empty, CultureInfo.InvariantCulture)
                 .Deconstruct(out charsWritten);
         }
 

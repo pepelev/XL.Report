@@ -9,9 +9,12 @@ namespace XL.Report;
 
 public sealed class StreamBook : Book
 {
+    private sealed record DefinedName(string Id, string? Comment, StreamSheetBuilder Sheet, Range Range);
+
     private readonly ZipArchive archive;
     private readonly CompressionLevel compressionLevel;
     private readonly List<StreamSheetBuilder> sheets = new();
+    private readonly Dictionary<string, DefinedName> definedNames = new();
 
     public StreamBook(Stream output, CompressionLevel compressionLevel, bool leaveOpen)
         : this(
@@ -45,15 +48,26 @@ public sealed class StreamBook : Book
         archive.Dispose();
     }
 
-    public override SheetBuilder OpenSheet(string name, SheetOptions options)
+    public override SheetBuilder CreateSheet(string name, SheetOptions options)
     {
         EnsureThereIsNoCurrentSheet();
 
         var path = new SheetPath(sheets.Count);
-        var entry = archive.CreateEntry(path.AsString(), compressionLevel);
-        var builder = new StreamSheetBuilder(path, name, entry, options);
+        var builder = new StreamSheetBuilder(this, path, name, options);
         sheets.Add(builder);
         return builder;
+    }
+
+    private ZipArchiveEntry CreateEntry(string path)
+    {
+        return archive.CreateEntry(path, compressionLevel);
+    }
+
+    private void DefineName(StreamSheetBuilder sheet, string name, Range range, string? comment = null)
+    {
+        // todo check name(id) with rules and uniq
+        var definedName = new DefinedName(name, comment, sheet, range);
+        definedNames.Add(name, definedName);
     }
 
     private void EnsureThereIsNoCurrentSheet()
@@ -95,6 +109,7 @@ public sealed class StreamBook : Book
             xml.WriteAttribute("xmlns", "r", XlsxStructure.Namespaces.OfficeDocuments.Relationships);
             using (xml.WriteStartElement("sheets"))
             {
+                // todo check zero sheets
                 for (var i = 0; i < sheets.Count; i++)
                 {
                     var sheet = sheets[i];
@@ -104,6 +119,27 @@ public sealed class StreamBook : Book
                         xml.WriteAttribute("name", sheet.Name);
                         xml.WriteAttribute("sheetId", id);
                         xml.WriteAttribute("r", "id", $"rId{id}");
+                    }
+                }
+            }
+
+            if (definedNames.Count > 0)
+            {
+                using (xml.WriteStartElement("definedNames"))
+                {
+                    foreach (var (id, comment, streamSheetBuilder, range) in definedNames.Values)
+                    {
+                        using (xml.WriteStartElement("definedName"))
+                        {
+                            xml.WriteAttribute("name", id);
+                            if (comment != null)
+                            {
+                                xml.WriteAttribute("commend", comment);
+                            }
+
+                            var value = new SheetRelated<Range>(streamSheetBuilder.Name, range);
+                            xml.WriteValue(value.ToFormattable());
+                        }
                     }
                 }
             }
@@ -246,25 +282,36 @@ public sealed class StreamBook : Book
         }
 
         [Pure]
+        public string RelsAsString()
+        {
+            var number = (index + 1).ToString(CultureInfo.InvariantCulture);
+            return $"xl/worksheets/_rels/sheet{number}.xml.rels";
+        }
+
+        [Pure]
         public string SlashLeadingString() => $"/{AsString()}";
     }
 
     private sealed class StreamSheetBuilder : SheetBuilder
     {
-        private readonly Stream entryStream;
+        private readonly StreamBook book;
         private readonly StreamSheetWindow window;
+        private readonly XmlHyperlinks hyperlinks;
         private volatile bool open = true;
 
         public StreamSheetBuilder(
+            StreamBook book,
             SheetPath path,
             string name,
-            ZipArchiveEntry entry,
             SheetOptions options)
         {
+            this.book = book;
             Path = path;
             Name = name;
-            entryStream = entry.Open();
+            var entry = book.CreateEntry(path.AsString());
+            var entryStream = entry.Open();
             window = new StreamSheetWindow(entryStream, options);
+            hyperlinks = new XmlHyperlinks(this);
         }
 
         public SheetPath Path { get; }
@@ -287,9 +334,32 @@ public sealed class StreamBook : Book
             return result;
         }
 
+        public override void DefineName(string name, Range range, string? comment = null)
+        {
+            book.DefineName(this, name, range, comment);
+        }
+
+        public override Hyperlinks Hyperlinks => hyperlinks;
+
         public override void Complete()
         {
-            window.Complete();
+            window.Complete(hyperlinks);
+            window.Dispose();
+            if (hyperlinks.RequireRelsPart)
+            {
+                var entry = book.CreateEntry(Path.RelsAsString());
+                using var stream = entry.Open();
+                var settings = new XmlWriterSettings
+                {
+                    Encoding = Encoding.UTF8,
+                    CloseOutput = true
+                };
+                using var xml = new Xml(XmlWriter.Create(stream, settings));
+                using (xml.WriteStartDocument("Relationships", "http://schemas.openxmlformats.org/package/2006/relationships"))
+                {
+                    hyperlinks.WriteRelsPart(xml);
+                }
+            }
         }
     }
 }

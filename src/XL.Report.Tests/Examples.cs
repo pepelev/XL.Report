@@ -1,4 +1,5 @@
-﻿using System.IO.Compression;
+﻿using System.Globalization;
+using System.IO.Compression;
 using System.Text;
 using JetBrains.Annotations;
 using XL.Report.Styles;
@@ -26,7 +27,7 @@ public sealed class Examples
     public void Simplest_Book()
     {
         using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
-        using (var sheet = book.OpenSheet(TestName, SheetOptions.Default))
+        using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
         {
             IUnit<Location> cell = new Cell(new Number(42));
             sheet.WriteRow(cell);
@@ -41,7 +42,7 @@ public sealed class Examples
     {
         using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
         var styles = book.Styles;
-        using (var sheet = book.OpenSheet(TestName, SheetOptions.Default))
+        using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
         {
             var times = Style.Default.WithFontFamily("Times New Roman");
             var row = new Row(
@@ -77,7 +78,7 @@ public sealed class Examples
 
         for (var i = 0; i < 10; i++)
         {
-            using var sheet = book.OpenSheet($"{TestName} {i + 1}", SheetOptions.Default);
+            using var sheet = book.CreateSheet($"{TestName} {i + 1}", SheetOptions.Default);
             var row = new Row(
                 new Cell(new InlineString("Sheet index:")),
                 new Cell(new Number(i))
@@ -94,7 +95,7 @@ public sealed class Examples
     {
         using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
 
-        using (var sheet = book.OpenSheet(TestName, SheetOptions.Default))
+        using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
         {
             var row = new Merge(
                 new InlineString("Merged cell"),
@@ -116,7 +117,7 @@ public sealed class Examples
 
         using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
 
-        using (var sheet = book.OpenSheet(TestName, SheetOptions.Default))
+        using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
         {
             for (var i = 0; i < 100_000; i++)
             {
@@ -154,6 +155,33 @@ public sealed class Examples
 
             return builder.ToString();
         }
+    }
+
+    [Test]
+    public void Hyperlinks()
+    {
+        using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
+
+        using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
+        {
+            var row = new Row(
+                new Cell(new InlineString("example.com")),
+                new Cell(new InlineString("mail")),
+                new Cell(new InlineString("file")),
+                new Cell(new InlineString("range")),
+                new Cell(new InlineString("defined name"))
+            );
+            sheet.WriteRow(row);
+            sheet.DefineName("area", Range.Parse("E2:E5"));
+            sheet.Hyperlinks.Add(Range.Parse("A1:A1"), "https://example.com", tooltip: "https");
+            sheet.Hyperlinks.Add(Range.Parse("B1:B1"), Hyperlink.Mailto("who@example.com", "Hello"), tooltip: "mail");
+            sheet.Hyperlinks.Add(Range.Parse("C1:C1"), "new-file.xlsx", tooltip: "new-file");
+            sheet.Hyperlinks.AddToRange(Range.Parse("D1:D1"), target: Range.Parse("D2:D5"), tooltip: "range");
+            sheet.Hyperlinks.AddToDefinedName(Range.Parse("E1:E1"), "area", tooltip: "defined-name");
+            sheet.Complete();
+        }
+
+        book.Complete();
     }
 
     [Test]

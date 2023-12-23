@@ -38,6 +38,24 @@ public sealed class Examples
     }
 
     [Test]
+    public void Formulas()
+    {
+        using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
+        using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
+        {
+            var row = new Row(
+                new Cell(new Number(42)),
+                new Cell(new Number(24)),
+                new Cell(new Formula(new Expression.Verbatim("A1+B1")))
+            );
+            sheet.WriteRow(row);
+            sheet.Complete();
+        }
+
+        book.Complete();
+    }
+
+    [Test]
     public void Font_Styling()
     {
         using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);

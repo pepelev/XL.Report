@@ -161,4 +161,68 @@ public readonly struct Location
     private string PrintY() => Y.ToString(CultureInfo.InvariantCulture);
     public static bool operator ==(Location a, Location b) => a.Equals(b);
     public static bool operator !=(Location a, Location b) => !(a == b);
+
+    public readonly struct Reference : ISpanFormattable
+    {
+        private const string lockSign = "$";
+
+        public Reference(Location location, bool columnLocked, bool rowLocked)
+        {
+            if (!Location.IsCorrect())
+            {
+                throw new ArgumentException();
+            }
+
+            Location = location;
+            ColumnLocked = columnLocked;
+            RowLocked = rowLocked;
+        }
+
+        public Location Location { get; }
+        public bool ColumnLocked { get; }
+        public bool RowLocked { get; }
+
+        public string ToString(string? format, IFormatProvider? formatProvider)
+        {
+            var columnPrefix = ColumnLocked
+                ? lockSign
+                : "";
+            var rowPrefix = RowLocked
+                ? lockSign
+                : "";
+
+            return $"{columnPrefix}{Location.PrintX()}{rowPrefix}{Location.PrintY()}";
+        }
+
+        public override string ToString() => ToString(null, CultureInfo.InvariantCulture);
+
+        public bool TryFormat(
+            Span<char> destination,
+            out int charsWritten,
+            ReadOnlySpan<char> format,
+            IFormatProvider? provider)
+        {
+            var context = FormatContext.Start;
+            if (ColumnLocked)
+            {
+                context = context.Write(ref destination, lockSign);
+            }
+
+            context = context.Write(ref destination, (uint)Location.X, TryFormatCorrectX);
+
+            if (RowLocked)
+            {
+                context = context.Write(ref destination, lockSign);
+            }
+
+            context = context.Write(
+                ref destination,
+                Location.Y,
+                ReadOnlySpan<char>.Empty,
+                CultureInfo.InvariantCulture
+            );
+
+            return context.Deconstruct(out charsWritten);
+        }
+    }
 }

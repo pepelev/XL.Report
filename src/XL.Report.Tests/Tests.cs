@@ -17,24 +17,33 @@ public sealed class Tests
         "xl/sharedStrings.xml" -> "xl/worksheets/sheet1.xml"
         "xl/_rels/workbook.xml.rels" -> "xl/worksheets/sheet1.xml"
 
-        todo add
-        - styles,
-        - Book class,
-        - flush rows,
-        - imperative-programing(new sheet, print),
-        - conditional-formatting,
+        added:
+        - Book class
+        - flush rows
+        - imperative-programing(new sheet print)
         - defined-names
-        - hyper-links,
-        - sharedStrings,
-        - закрепление областей,
-        - column width and row height
-        - column and row styles,
-        - many styles within one cell
+        - hyper-links
+        - sharedStrings
+        - закрепление областей
+        - column width
         - merged cells
+
+        partially added:
+        - styles
+        - formulas
+
+        todo add:
+        - conditional-formatting
+        - styles.rest cell styles
+        - row height
+        - column styles
+        - row styles
+        - many styles within one cell
         - netstandard2.1 support
         - reorder sheets
-        - formulas
-          - row and column references
+        - formulas.row and column references
+        - formulas.functions and combinations
+        - formulas.range-reference
      */
 
     [Test]

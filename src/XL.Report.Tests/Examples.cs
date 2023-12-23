@@ -1,5 +1,4 @@
-﻿using System.Globalization;
-using System.IO.Compression;
+﻿using System.IO.Compression;
 using System.Text;
 using JetBrains.Annotations;
 using XL.Report.Styles;

@@ -23,6 +23,7 @@ public sealed class Tests
         - flush rows,
         - imperative-programing(new sheet, print),
         - conditional-formatting,
+        - defined-names
         - hyper-links,
         - sharedStrings,
         - закрепление областей,
@@ -33,6 +34,7 @@ public sealed class Tests
         - netstandard2.1 support
         - reorder sheets
         - formulas
+          - row and column references
      */
 
     [Test]

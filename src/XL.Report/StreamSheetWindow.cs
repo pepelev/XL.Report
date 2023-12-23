@@ -344,7 +344,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
 
                 if (StyleId is { } styleId)
                 {
-                    xml.WriteAttribute(XlsxStructure.Worksheet.Style, styleId.Index);
+                    xml.WriteAttribute(XlsxStructure.Worksheet.Style, styleId);
                 }
 
                 Content.Write(xml);

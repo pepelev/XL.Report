@@ -27,14 +27,13 @@ public sealed class Tests
         - закрепление областей
         - column width
         - merged cells
+        - styles
 
         partially added:
-        - styles
         - formulas
 
         todo add:
         - conditional-formatting
-        - styles.rest cell styles
         - row height
         - column styles
         - row styles
@@ -44,6 +43,7 @@ public sealed class Tests
         - formulas.row and column references
         - formulas.functions and combinations
         - formulas.range-reference
+        - BlankContent : Content
      */
 
     [Test]

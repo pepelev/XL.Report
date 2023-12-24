@@ -3,7 +3,7 @@ using static XL.Report.XlsxStructure.Styles;
 
 namespace XL.Report.Styles;
 
-public sealed record Font(
+public sealed partial record Font(
     string Family,
     float Size,
     Color? Color,

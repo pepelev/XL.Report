@@ -297,6 +297,7 @@ public sealed class StreamBook : Book
         private readonly StreamBook book;
         private readonly StreamSheetWindow window;
         private readonly XmlHyperlinks hyperlinks;
+        private readonly List<ConditionalFormatting> conditionalFormattings = new();
         private volatile bool open = true;
 
         public StreamSheetBuilder(
@@ -341,9 +342,14 @@ public sealed class StreamBook : Book
 
         public override Hyperlinks Hyperlinks => hyperlinks;
 
+        public override void AddConditionalFormatting(ConditionalFormatting formatting)
+        {
+            conditionalFormattings.Add(formatting);
+        }
+
         public override void Complete()
         {
-            window.Complete(hyperlinks);
+            window.Complete(hyperlinks, conditionalFormattings);
             window.Dispose();
             if (hyperlinks.RequireRelsPart)
             {

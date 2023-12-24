@@ -2,7 +2,7 @@
 
 namespace XL.Report.Styles;
 
-public readonly record struct FontStyle(
+public readonly partial record struct FontStyle(
     bool IsBold = false,
     bool IsItalic = false,
     bool IsStrikethrough = false,
@@ -15,8 +15,8 @@ public readonly record struct FontStyle(
     public static FontStyle Italic => new(IsItalic: true);
     public static FontStyle Strikethrough => new(IsStrikethrough: true);
     public static FontStyle Underlined(Underline underline = Styles.Underline.Single) => new(Underline: underline);
-    public static FontStyle Superscript() => new(Alignment: FontVerticalAlignment.Superscript);
-    public static FontStyle Subscript() => new(Alignment: FontVerticalAlignment.Subscript);
+    public static FontStyle Superscript => new(Alignment: FontVerticalAlignment.Superscript);
+    public static FontStyle Subscript => new(Alignment: FontVerticalAlignment.Subscript);
 
     public override string ToString()
     {

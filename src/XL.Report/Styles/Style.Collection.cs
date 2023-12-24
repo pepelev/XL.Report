@@ -13,6 +13,7 @@ public sealed partial record Style
         private readonly Dictionary<Fill, int> fills = new();
         private readonly Dictionary<Borders, int> borders = new();
         private readonly Dictionary<Style, StyleId> registeredStyles = new();
+        private readonly Dictionary<Diff, StyleDiffId> registeredDiffs = new();
 
         public Collection()
         {
@@ -28,7 +29,7 @@ public sealed partial record Style
                 return styleId;
             }
 
-            formats.TryAdd(style.Format, formats.Count);
+            formats.TryAdd(style.Format, formats.Count + 256);
             alignments.TryAdd(style.Appearance.Alignment, alignments.Count);
             fonts.TryAdd(style.Appearance.Font, fonts.Count);
             fills.TryAdd(style.Appearance.Fill, fills.Count);
@@ -38,10 +39,24 @@ public sealed partial record Style
             return newStyleId;
         }
 
+        public StyleDiffId Register(Diff diff)
+        {
+            if (registeredDiffs.TryGetValue(diff, out var styleDiffId))
+            {
+                return styleDiffId;
+            }
+
+            var newStyleDiffId = new StyleDiffId(registeredDiffs.Count);
+            registeredDiffs.Add(diff, newStyleDiffId);
+            return newStyleDiffId;
+        }
+
         public void Write(Xml xml)
         {
             using (xml.WriteStartDocument(RootElement, XlsxStructure.Namespaces.Spreadsheet.Main))
             {
+                Format.Write(xml, formats.Select(pair => (pair.Key, pair.Value)));
+
                 var orderedFonts = fonts
                     .OrderBy(font => font.Value)
                     .Select(pair => pair.Key)
@@ -118,6 +133,22 @@ public sealed partial record Style
                                 xml.WriteAttribute(CellFormats.ApplyAlignment, "1");
                                 alignment.Write(xml);
                             }
+                        }
+                    }
+                }
+
+                if (registeredDiffs.Count > 0)
+                {
+                    using (xml.WriteStartElement("dxfs"))
+                    {
+                        var orderedDiffs = registeredDiffs
+                            .OrderBy(pair => pair.Value)
+                            .Select(pair => pair.Key)
+                            .ToList();
+
+                        foreach (var diff in orderedDiffs)
+                        {
+                            diff.Write(xml);
                         }
                     }
                 }

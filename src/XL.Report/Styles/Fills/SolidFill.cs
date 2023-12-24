@@ -2,12 +2,12 @@
 
 public sealed class SolidFill : Fill, IEquatable<SolidFill>
 {
-    public SolidFill(ColorWithAlpha color)
+    public SolidFill(Color color)
     {
         Color = color;
     }
 
-    public ColorWithAlpha Color { get; }
+    public Color Color { get; }
 
     public bool Equals(SolidFill? other)
     {
@@ -31,7 +31,15 @@ public sealed class SolidFill : Fill, IEquatable<SolidFill>
 
     public override void Write(Xml xml)
     {
-        throw new NotImplementedException();
+        using (xml.WriteStartElement(XlsxStructure.Styles.Fills.Fill))
+        using (xml.WriteStartElement(XlsxStructure.Styles.Fills.Pattern))
+        {
+            xml.WriteAttribute(XlsxStructure.Styles.Fills.PatternType, "solid");
+            using (xml.WriteStartElement("fgColor"))
+            {
+                xml.WriteAttribute("rgb", Color.ToRGBHex());
+            }
+        }
     }
 
     public override bool Equals(object? obj) => ReferenceEquals(this, obj) || obj is SolidFill other && Equals(other);

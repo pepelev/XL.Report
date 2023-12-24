@@ -2,75 +2,66 @@
 
 public sealed class DiagonalBorders : IEquatable<DiagonalBorders>, IBorder
 {
-    public DiagonalBorders(BorderStyle style, ColorWithAlpha? color, bool mainDiagonal, bool antidiagonal)
+    public DiagonalBorders(BorderStyle style, Color? color, bool up, bool down)
     {
-        MainDiagonal = mainDiagonal;
-        Antidiagonal = antidiagonal;
+        if (!up && !down)
+        {
+            throw new ArgumentException(
+                $"at least one of {nameof(up)}, {nameof(down)} must be true"
+            );
+        }
+
+        Up = up;
+        Down = down;
         Color = color;
         Style = style;
     }
 
-    public static DiagonalBorders None { get; } = new(BorderStyle.None, color: null, false, false);
+    public bool Up { get; }
+    public bool Down { get; }
 
-    public bool MainDiagonal { get; }
-    public bool Antidiagonal { get; }
-
-    public ColorWithAlpha? Color { get; }
+    public Color? Color { get; }
     public BorderStyle Style { get; }
 
     public bool Equals(DiagonalBorders? other)
     {
         if (ReferenceEquals(null, other))
+        {
             return false;
-        if (ReferenceEquals(this, other))
-            return true;
+        }
 
-        return MainDiagonal == other.MainDiagonal &&
-               Antidiagonal == other.Antidiagonal &&
-               Color.Equals(other.Color) &&
-               Style == other.Style;
+        if (ReferenceEquals(this, other))
+        {
+            return true;
+        }
+
+        return Up == other.Up &&
+               Down == other.Down &&
+               Nullable.Equals(Color, other.Color) &&
+               Style.Equals(other.Style);
     }
 
     public override string ToString()
     {
-        if (Equals(None) ||
-            Style == BorderStyle.None ||
-            !MainDiagonal && !Antidiagonal)
-            return nameof(None);
-
-        if (MainDiagonal && Antidiagonal)
-            return PrintBorder("Both");
-
-        if (MainDiagonal)
-            return PrintBorder("Main");
-
-        return PrintBorder("Anti");
-
-        string PrintBorder(string type)
+        var diagonals = (UpDiagonal: Up, DownDiagonal: Down) switch
         {
-            return $"{type} {Color} {Style}";
-        }
-    }
+            (true, true) => "Cross",
+            (true, false) => "Up",
+            (false, true) => "Down",
+            _ => "bug"
+        };
 
-    public override bool Equals(object? obj)
-    {
-        if (ReferenceEquals(null, obj))
-            return false;
-        if (ReferenceEquals(this, obj))
-            return true;
-
-        return obj is DiagonalBorders borders && Equals(borders);
-    }
-
-    public override int GetHashCode()
-    {
-        unchecked
+        var parts = new[]
         {
-            var hashCode = MainDiagonal.GetHashCode();
-            hashCode = (hashCode * 397) ^ Antidiagonal.GetHashCode();
-            hashCode = (hashCode * 397) ^ Color.GetHashCode();
-            hashCode = (hashCode * 397) ^ (int)Style;
-            return hashCode;
-        }
+            diagonals,
+            Style.ToString(),
+            Color?.ToString()
+        }.Where(part => !string.IsNullOrWhiteSpace(part));
+        return string.Join(' ', parts);
     }
+
+    public override bool Equals(object? obj) => 
+        ReferenceEquals(this, obj) || obj is DiagonalBorders other && Equals(other);
+
+    public override int GetHashCode() => HashCode.Combine(Up, Down, Color, Style);
 }

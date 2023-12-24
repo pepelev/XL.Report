@@ -2,62 +2,63 @@
 
 public sealed class PatternFill : Fill, IEquatable<PatternFill>
 {
-    public PatternFill(Pattern pattern, ColorWithAlpha color, ColorWithAlpha? background = null)
+    public PatternFill(Pattern pattern, Color? color, Color? background = null)
     {
         Pattern = pattern;
         Color = color;
         Background = background;
     }
 
-    public ColorWithAlpha Color { get; }
-    public ColorWithAlpha? Background { get; }
+    public Color? Color { get; }
+    public Color? Background { get; }
     public Pattern Pattern { get; }
 
     public bool Equals(PatternFill? other)
     {
         if (ReferenceEquals(null, other))
+        {
             return false;
+        }
+
         if (ReferenceEquals(this, other))
+        {
             return true;
+        }
 
-        return Color.Equals(other.Color) &&
-               Background.Equals(other.Background) &&
-               Pattern == other.Pattern;
+        return Nullable.Equals(Color, other.Color) &&
+               Nullable.Equals(Background, other.Background) &&
+               Pattern.Equals(other.Pattern);
     }
 
-    public override bool Equals(object? obj)
-    {
-        return Equals(obj as PatternFill);
-    }
-
-    public override T Accept<T>(Visitor<T> visitor)
-    {
-        return visitor.Visit(this);
-    }
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj) || obj is PatternFill other && Equals(other);
+    public override T Accept<T>(Visitor<T> visitor) => visitor.Visit(this);
 
     public override void Write(Xml xml)
     {
-        throw new NotImplementedException();
-    }
-
-    public override int GetHashCode()
-    {
-        unchecked
+        using (xml.WriteStartElement(XlsxStructure.Styles.Fills.Fill))
+        using (xml.WriteStartElement(XlsxStructure.Styles.Fills.Pattern))
         {
-            var hashCode = Color.GetHashCode();
-            hashCode = (hashCode * 397) ^ Background.GetHashCode();
-            hashCode = (hashCode * 397) ^ Pattern.GetHashCode();
-            return hashCode;
+            xml.WriteAttribute(XlsxStructure.Styles.Fills.PatternType, Pattern);
+
+            if (Color is { } color)
+            {
+                using (xml.WriteStartElement("fgColor"))
+                {
+                    xml.WriteAttribute("rgb", color.ToRGBHex());
+                }
+            }
+
+            if (Background is { } background)
+            {
+                using (xml.WriteStartElement("bgColor"))
+                {
+                    xml.WriteAttribute("rgb", background.ToRGBHex());
+                }
+            }
         }
     }
 
-    public override string ToString()
-    {
-        return $"{Pattern}:({PrintColor(Color)}, {PrintColor(Background)})";
-    }
-
-    private static string PrintColor(ColorWithAlpha? color)
-    {
-        return color?.ToString() ?? "null";
-    }
+    public override int GetHashCode() => HashCode.Combine(Color, Background, Pattern);
+    public override string ToString() => $"{Pattern}:({PrintColor(Color)}, {PrintColor(Background)})";
+    private static string PrintColor(Color? color) => color?.ToString() ?? "null";
 }

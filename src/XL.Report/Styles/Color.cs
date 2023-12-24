@@ -18,6 +18,8 @@ public readonly struct Color : IEquatable<Color>
     public override int GetHashCode() => HashCode.Combine(Red, Green, Blue);
     public static bool operator ==(Color left, Color right) => left.Equals(right);
     public static bool operator !=(Color left, Color right) => !left.Equals(right);
+
+    // todo span formattable
     public string ToRGBHex() => $"{Red:X2}{Green:X2}{Blue:X2}";
     public override string ToString() => $"#{ToRGBHex()}";
 }

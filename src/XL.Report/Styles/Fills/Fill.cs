@@ -1,5 +1,6 @@
 ﻿namespace XL.Report.Styles.Fills;
 
+// todo gradient fill
 public abstract partial class Fill
 {
     public static Fill No { get; } = new NoFill();

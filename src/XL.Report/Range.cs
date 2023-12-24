@@ -146,6 +146,17 @@ public readonly struct Range
         );
     }
 
+    public Range ReduceLeftUp(Size size)
+    {
+        var reducedRange = new Range(LeftTop, size);
+        if (Contains(reducedRange))
+        {
+            return reducedRange;
+        }
+
+        throw new ArgumentException();
+    }
+
     public static Range MinimalBounding(Range a, Range b)
     {
         var leftTop = new Location(

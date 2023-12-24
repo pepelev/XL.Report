@@ -1,3 +1,5 @@
+using System.Diagnostics.Contracts;
+
 namespace XL.Report;
 
 // todo make int
@@ -54,5 +56,17 @@ public readonly struct Size : IEquatable<Size>
         return (long)Width * Height;
     }
 
+    [Pure]
+    public Offset AsOffset() => new(Width, Height);
+
+    [Pure]
+    public Size MultiplyWidth(int factor) => new(Width * factor, Height);
+
+    [Pure]
+    public Size MultiplyHeight(int factor) => new(Width, Height * factor);
+
+    [Pure]
     public bool Contains(Size size) => size.Width <= Width && size.Height <= Height;
+
+    public static Size operator *(Size size, int factor) => new(size.Width * factor, size.Height * factor);
 }

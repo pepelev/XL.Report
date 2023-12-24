@@ -1,10 +1,10 @@
-﻿namespace XL.Report;
+namespace XL.Report;
 
-public readonly struct Row : IUnit<Range>
+public readonly struct Column : IUnit<Range>
 {
     private readonly IUnit<Range>[] units;
 
-    public Row(params IUnit<Range>[] units)
+    public Column(params IUnit<Range>[] units)
     {
         this.units = units;
     }
@@ -15,7 +15,7 @@ public readonly struct Row : IUnit<Range>
         foreach (var unit in units ?? Array.Empty<IUnit<Range>>())
         {
             Range range;
-            using (window.Reduce(new Offset(written.Size.Width, 0)))
+            using (window.Reduce(new Offset(0, written.Size.Height)))
             {
                 range = unit.Write(window);
             }

@@ -8,6 +8,7 @@ public sealed partial record Style
     public sealed class Collection
     {
         private readonly Dictionary<Format, int> formats = new();
+        private readonly Dictionary<Alignment, int> alignments = new();
         private readonly Dictionary<Font, int> fonts = new();
         private readonly Dictionary<Fill, int> fills = new();
         private readonly Dictionary<Borders, int> borders = new();
@@ -15,6 +16,8 @@ public sealed partial record Style
 
         public Collection()
         {
+            fills.TryAdd(Fill.No, 0);
+            fills.TryAdd(new PatternFill(Pattern.Gray125, color: null), 1);
             _ = Register(Default);
         }
 
@@ -26,6 +29,7 @@ public sealed partial record Style
             }
 
             formats.TryAdd(style.Format, formats.Count);
+            alignments.TryAdd(style.Appearance.Alignment, alignments.Count);
             fonts.TryAdd(style.Appearance.Font, fonts.Count);
             fills.TryAdd(style.Appearance.Fill, fills.Count);
             borders.TryAdd(style.Appearance.Borders, borders.Count);
@@ -79,6 +83,8 @@ public sealed partial record Style
                         {
                             xml.WriteAttribute(CellFormats.StyleFormatIndex, "0");
                             var formatIndex = formats[style.Format];
+                            var alignment = style.Appearance.Alignment;
+                            var alignmentIndex = alignments[alignment];
                             var fontIndex = fonts[style.Appearance.Font];
                             var fillIndex = fills[style.Appearance.Fill];
                             var bordersIndex = borders[style.Appearance.Borders];
@@ -107,7 +113,11 @@ public sealed partial record Style
                                 xml.WriteAttribute(CellFormats.ApplyBorders, "1");
                             }
 
-                            // todo alignment
+                            if (alignmentIndex > 0 && !alignment.IsDefault)
+                            {
+                                xml.WriteAttribute(CellFormats.ApplyAlignment, "1");
+                                alignment.Write(xml);
+                            }
                         }
                     }
                 }

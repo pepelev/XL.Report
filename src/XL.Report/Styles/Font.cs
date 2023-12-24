@@ -21,6 +21,51 @@ public sealed record Font(
     {
         using (xml.WriteStartElement(Fonts.Font))
         {
+            if (Style.IsBold)
+            {
+                xml.WriteEmptyElement("b");
+            }
+
+            if (Style.IsItalic)
+            {
+                xml.WriteEmptyElement("i");
+            }
+
+            if (Style.IsStrikethrough)
+            {
+                xml.WriteEmptyElement("strike");
+            }
+
+            if (Style.Underline is { } underline)
+            {
+                using (xml.WriteStartElement("u"))
+                {
+                    var value = underline switch
+                    {
+                        Underline.Single => "single",
+                        Underline.SingleByCell => "singleAccounting",
+                        Underline.Double => "double",
+                        Underline.DoubleByCell => "doubleAccounting",
+                        _ => "single"
+                    };
+                    xml.WriteAttribute("val", value);
+                }
+            }
+
+            if (Style.Alignment != FontVerticalAlignment.Regular)
+            {
+                using (xml.WriteStartElement("vertAlign"))
+                {
+                    var value = Style.Alignment switch
+                    {
+                        FontVerticalAlignment.Subscript => "subscript",
+                        FontVerticalAlignment.Superscript => "superscript",
+                        _ => "superscript"
+                    };
+                    xml.WriteAttribute("val", value);
+                }
+            }
+
             using (xml.WriteStartElement(Fonts.Size))
             {
                 xml.WriteAttribute(Fonts.SizeValue, Size, "N3");
@@ -39,8 +84,6 @@ public sealed record Font(
             {
                 xml.WriteAttribute(Fonts.NameValue, Family);
             }
-
-            // todo write Style
         }
     }
 

@@ -3,15 +3,13 @@
 // todo make struct record
 public sealed class Border : IEquatable<Border>, IBorder
 {
-    public Border(BorderStyle style, ColorWithAlpha? color = null)
+    public Border(BorderStyle style, Color? color = null)
     {
         Color = color;
         Style = style;
     }
 
-    public static Border None { get; } = new(BorderStyle.None);
-
-    public ColorWithAlpha? Color { get; }
+    public Color? Color { get; }
     public BorderStyle Style { get; }
 
     public bool Equals(Border? other)
@@ -26,25 +24,20 @@ public sealed class Border : IEquatable<Border>, IBorder
             return true;
         }
 
-        return Color.Equals(other.Color) && Style == other.Style;
+        return Nullable.Equals(Color, other.Color) && Style.Equals(other.Style);
     }
 
     public override string ToString()
     {
-        if (Equals(None))
+        var parts = new[]
         {
-            return nameof(None);
-        }
-
-        if (Style == BorderStyle.None)
-        {
-            return Color.ToString();
-        }
-
-        return $"{Style} {Color}";
+            Style.ToString(),
+            Color?.ToString()
+        }.Where(part => !string.IsNullOrWhiteSpace(part));
+        return string.Join(' ', parts);
     }
 
     public override bool Equals(object? obj) => ReferenceEquals(this, obj) || obj is Border other && Equals(other);
 
-    public override int GetHashCode() => HashCode.Combine(Color, (int)Style);
+    public override int GetHashCode() => HashCode.Combine(Color, Style);
 }

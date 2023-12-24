@@ -2,81 +2,21 @@
 
 namespace XL.Report.Styles;
 
-public readonly struct FontStyle : IEquatable<FontStyle>
+public readonly record struct FontStyle(
+    bool IsBold = false,
+    bool IsItalic = false,
+    bool IsStrikethrough = false,
+    Underline? Underline = null,
+    FontVerticalAlignment Alignment = FontVerticalAlignment.Regular
+)
 {
-    private const ushort UnderlineMask = 0x7F;
-    private const ushort UnderlineNullBit = 0x80;
-
-    private const ushort BoldBit = 1 << 8;
-    private const ushort ItalicBit = 1 << 9;
-    private const ushort CrossedBit = 1 << 10;
-
-    private readonly ushort value;
-
-    public FontStyle(
-        Underline? underline,
-        bool bold,
-        bool italic,
-        bool crossed
-    )
-    {
-        value = (ushort)
-        (
-            GetUnderline()
-            | GetBitValue(bold, BoldBit)
-            | GetBitValue(italic, ItalicBit)
-            | GetBitValue(crossed, CrossedBit)
-        );
-
-        int GetUnderline()
-        {
-            return underline is { } underlineValue
-                ? (int)underlineValue & UnderlineMask
-                : UnderlineNullBit;
-        }
-
-        int GetBitValue(bool condition, int bit)
-        {
-            return condition
-                ? bit
-                : 0x0000;
-        }
-    }
-
-    public static FontStyle Regular => new(null, false, false, false);
-    public static FontStyle Bold => new(null, true, false, false);
-    public static FontStyle Italic => new(null, false, true, false);
-    public static FontStyle Crossed => new(null, false, false, true);
-
-    public static FontStyle Underlined(Underline underline = Styles.Underline.Single)
-    {
-        return new FontStyle(underline, false, false, false);
-    }
-
-    public Underline? Underline
-    {
-        get
-        {
-            if ((value & UnderlineNullBit) == UnderlineNullBit)
-                return null;
-
-            return (Underline)(value & UnderlineMask);
-        }
-    }
-
-    public bool IsBold => (value & BoldBit) == BoldBit;
-    public bool IsItalic => (value & ItalicBit) == ItalicBit;
-    public bool IsCrossed => (value & CrossedBit) == CrossedBit;
-
-    public bool Equals(FontStyle other)
-    {
-        return value == other.value;
-    }
-
-    public override bool Equals(object? obj)
-    {
-        return obj is FontStyle style && Equals(style);
-    }
+    public static FontStyle Regular => new();
+    public static FontStyle Bold => new(IsBold: true);
+    public static FontStyle Italic => new(IsItalic: true);
+    public static FontStyle Strikethrough => new(IsStrikethrough: true);
+    public static FontStyle Underlined(Underline underline = Styles.Underline.Single) => new(Underline: underline);
+    public static FontStyle Superscript() => new(Alignment: FontVerticalAlignment.Superscript);
+    public static FontStyle Subscript() => new(Alignment: FontVerticalAlignment.Subscript);
 
     public override string ToString()
     {
@@ -86,8 +26,8 @@ public readonly struct FontStyle : IEquatable<FontStyle>
             return nameof(Bold);
         if (Equals(Italic))
             return nameof(Italic);
-        if (Equals(Crossed))
-            return nameof(Crossed);
+        if (Equals(Strikethrough))
+            return nameof(Strikethrough);
 
         var builder = new StringBuilder(64);
         var isFirst = true;
@@ -106,11 +46,11 @@ public readonly struct FontStyle : IEquatable<FontStyle>
             isFirst = false;
         }
 
-        if (IsCrossed)
+        if (IsStrikethrough)
         {
             if (!isFirst)
                 builder.Append(", ");
-            builder.Append("Crossed");
+            builder.Append("Strikethrough");
             isFirst = false;
         }
 
@@ -122,11 +62,14 @@ public readonly struct FontStyle : IEquatable<FontStyle>
             builder.Append(underline);
         }
 
-        return builder.ToString();
-    }
+        if (Alignment != FontVerticalAlignment.Regular)
+        {
+            if (!isFirst)
+                builder.Append(", ");
+            builder.Append("Alignment: ");
+            builder.Append(Alignment);
+        }
 
-    public override int GetHashCode()
-    {
-        return value;
+        return builder.ToString();
     }
 }

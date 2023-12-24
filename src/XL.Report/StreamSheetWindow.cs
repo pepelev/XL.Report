@@ -6,10 +6,11 @@ namespace XL.Report;
 
 public sealed class StreamSheetWindow : SheetWindow, IDisposable
 {
-    private readonly SheetOptions options;
-    private readonly BTreeSlim<int, Row> rows = new();
     private readonly List<Range> mergedRanges = new();
+    private readonly SheetOptions options;
     private readonly Stack<Range> reductions = new();
+    private readonly ReductionStage?[] reductionStages = new ReductionStage?[32];
+    private readonly BTreeSlim<int, Row> rows = new();
     private readonly Xml xml;
     private Range activeRange;
     private (Xml.Block Document, Xml.Block SheetData)? started;
@@ -108,28 +109,31 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         mergedRanges.Add(new Range(range.LeftTop, size));
     }
 
-    public override void PushReduce(Offset offset, Size? newSize = null)
+    public override IDisposable Reduce(Reduction reduction)
     {
-        if (newSize?.IsDegenerate == true)
-        {
-            throw new ArgumentException("is degenerate", nameof(newSize));
-        }
-
         var current = Range;
-        var @new = new Range(current.LeftTop + offset, newSize ?? current.Size - offset);
+        var @new = new Range(current.LeftTop + reduction.Offset, reduction.NewSize ?? current.Size - reduction.Offset);
         if (!current.Contains(@new))
         {
-            throw current.Contains(new Range(current.LeftTop + offset, Size.Empty))
-                ? new ArgumentException("is too big", nameof(newSize))
-                : new ArgumentException($"is out of current {nameof(Range)}", nameof(offset));
+            throw current.Contains(new Range(current.LeftTop + reduction.Offset, Size.Empty))
+                ? new ArgumentException("is too big", nameof(reduction.NewSize))
+                : new ArgumentException($"is out of current {nameof(Range)}", nameof(reduction.Offset));
         }
 
+        var index = reductions.Count;
+        var stage = Stage();
         reductions.Push(@new);
-    }
+        return stage;
 
-    public override void PopReduce()
-    {
-        reductions.Pop();
+        ReductionStage Stage()
+        {
+            if (index < reductionStages.Length)
+            {
+                return reductionStages[index] ??= new ReductionStage(this, index);
+            }
+
+            return new ReductionStage(this, index);
+        }
     }
 
     public void Flush()
@@ -251,6 +255,28 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         document.Dispose();
     }
 
+    private sealed class ReductionStage : IDisposable
+    {
+        private readonly int index;
+        private readonly StreamSheetWindow window;
+
+        public ReductionStage(StreamSheetWindow window, int index)
+        {
+            this.window = window;
+            this.index = index;
+        }
+
+        public void Dispose()
+        {
+            if (window.reductions.Count != index + 1)
+            {
+                throw new InvalidOperationException();
+            }
+
+            window.reductions.Pop();
+        }
+    }
+
     private readonly struct Row : IKeyed<int>
     {
         public int Y { get; }
@@ -344,7 +370,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
 
                 if (StyleId is { } styleId)
                 {
-                    xml.WriteAttribute(XlsxStructure.Worksheet.Style, styleId.Index);
+                    xml.WriteAttribute(XlsxStructure.Worksheet.Style, styleId);
                 }
 
                 Content.Write(xml);

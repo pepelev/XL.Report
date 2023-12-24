@@ -1,56 +1,85 @@
-using System.Text;
-
 namespace XL.Report.Styles;
 
-public class Borders : IEquatable<Borders>
+public sealed class Borders : IEquatable<Borders>
 {
     public Borders(
-        Border left,
-        Border right,
-        Border top,
-        Border bottom,
-        DiagonalBorders diagonal)
+        Border? left = null,
+        Border? right = null,
+        Border? top = null,
+        Border? bottom = null,
+        DiagonalBorders? diagonal = null)
     {
-        Left = left ?? throw new ArgumentNullException(nameof(left));
-        Right = right ?? throw new ArgumentNullException(nameof(right));
-        Top = top ?? throw new ArgumentNullException(nameof(top));
-        Bottom = bottom ?? throw new ArgumentNullException(nameof(bottom));
-        Diagonal = diagonal ?? throw new ArgumentNullException(nameof(diagonal));
+        Left = left;
+        Right = right;
+        Top = top;
+        Bottom = bottom;
+        Diagonal = diagonal;
     }
 
-    public Border Left { get; }
-    public Border Right { get; }
-    public Border Top { get; }
-    public Border Bottom { get; }
-    public DiagonalBorders Diagonal { get; }
+    public Border? Left { get; }
+    public Border? Right { get; }
+    public Border? Top { get; }
+    public Border? Bottom { get; }
+    public DiagonalBorders? Diagonal { get; }
+    public static Borders Perimeter(Border border) => new(border, border, border, border, diagonal: null);
 
-    public static Borders None { get; } = new(
-        Border.None,
-        Border.None,
-        Border.None,
-        Border.None,
-        DiagonalBorders.None
-    );
+    public static Borders None { get; } = new();
 
     public void Write(Xml xml)
     {
         using (xml.WriteStartElement(XlsxStructure.Styles.Borders.Border))
         {
-            // todo
-            xml.WriteStartElement(XlsxStructure.Styles.Borders.Left);
-            xml.WriteEndElement();
+            if (Diagonal?.Up == true)
+            {
+                xml.WriteAttribute("diagonalUp", "1");
+            }
 
-            xml.WriteStartElement(XlsxStructure.Styles.Borders.Right);
-            xml.WriteEndElement();
+            if (Diagonal?.Down == true)
+            {
+                xml.WriteAttribute("diagonalDown", "1");
+            }
 
-            xml.WriteStartElement(XlsxStructure.Styles.Borders.Top);
-            xml.WriteEndElement();
+            using (xml.WriteStartElement(XlsxStructure.Styles.Borders.Left))
+            {
+                WriteElement(Left);
+            }
 
-            xml.WriteStartElement(XlsxStructure.Styles.Borders.Bottom);
-            xml.WriteEndElement();
+            using (xml.WriteStartElement(XlsxStructure.Styles.Borders.Right))
+            {
+                WriteElement(Right);
+            }
 
-            xml.WriteStartElement(XlsxStructure.Styles.Borders.Diagonal);
-            xml.WriteEndElement();
+            using (xml.WriteStartElement(XlsxStructure.Styles.Borders.Top))
+            {
+                WriteElement(Top);
+            }
+
+            using (xml.WriteStartElement(XlsxStructure.Styles.Borders.Bottom))
+            {
+                WriteElement(Bottom);
+            }
+
+            using (xml.WriteStartElement(XlsxStructure.Styles.Borders.Diagonal))
+            {
+                WriteElement(Diagonal);
+            }
+        }
+
+        void WriteElement(IBorder? border)
+        {
+            if (border == null)
+            {
+                return;
+            }
+
+            xml.WriteAttribute("style", border.Style);
+            if (border.Color is { } color)
+            {
+                using (xml.WriteStartElement("color"))
+                {
+                    xml.WriteAttribute("rgb", color.ToRGBHex());
+                }
+            }
         }
     }
 
@@ -68,9 +97,14 @@ public class Borders : IEquatable<Borders>
     public bool Equals(Borders? other)
     {
         if (ReferenceEquals(null, other))
+        {
             return false;
+        }
+
         if (ReferenceEquals(this, other))
+        {
             return true;
+        }
 
         return Equals(Left, other.Left) &&
                Equals(Right, other.Right) &&
@@ -79,65 +113,24 @@ public class Borders : IEquatable<Borders>
                Equals(Diagonal, other.Diagonal);
     }
 
-    public override bool Equals(object? obj)
-    {
-        if (ReferenceEquals(null, obj))
-            return false;
-        if (ReferenceEquals(this, obj))
-            return true;
-        if (obj.GetType() != GetType())
-            return false;
-
-        return Equals((Borders)obj);
-    }
-
-    public override int GetHashCode()
-    {
-        unchecked
-        {
-            var hashCode = Left.GetHashCode();
-            hashCode = (hashCode * 397) ^ Right.GetHashCode();
-            hashCode = (hashCode * 397) ^ Top.GetHashCode();
-            hashCode = (hashCode * 397) ^ Bottom.GetHashCode();
-            hashCode = (hashCode * 397) ^ Diagonal.GetHashCode();
-            return hashCode;
-        }
-    }
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj) || obj is Borders other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(Left, Right, Top, Bottom, Diagonal);
 
     public override string ToString()
     {
         if (Equals(None))
             return "None";
 
-        var builder = new StringBuilder(128);
-        var prependComma = false;
-        AppendIfNotNone(Left, nameof(Left));
-        AppendIfNotNone(Right, nameof(Right));
-        AppendIfNotNone(Top, nameof(Top));
-        AppendIfNotNone(Bottom, nameof(Bottom));
-
-        if (!Diagonal.Equals(DiagonalBorders.None))
-            WriteBorder(Diagonal, nameof(Diagonal));
-
-        return builder.ToString();
-
-        void AppendIfNotNone(Border border, string name)
-        {
-            if (border.Equals(Border.None))
-                return;
-
-            WriteBorder(border, name);
-        }
-
-        void WriteBorder(object border, string name)
-        {
-            if (prependComma)
-                builder.Append(", ");
-
-            builder.Append(name);
-            builder.Append(": ");
-            builder.Append(border);
-            prependComma = true;
-        }
+        var parts = new[]
+            {
+                (Name: nameof(Left), Value: Left?.ToString()),
+                (Name: nameof(Right), Value: Right?.ToString()),
+                (Name: nameof(Top), Value: Top?.ToString()),
+                (Name: nameof(Bottom), Value: Bottom?.ToString()),
+                (Name: nameof(Diagonal), Value: Diagonal?.ToString()),
+            }
+            .Where(part => !string.IsNullOrWhiteSpace(part.Value))
+            .Select(part => $"{part.Name}: {part.Value}");
+        return string.Join(' ', parts);
     }
 }

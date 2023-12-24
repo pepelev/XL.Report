@@ -232,7 +232,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         return started.Value;
     }
 
-    public void Complete(XmlHyperlinks hyperlinks)
+    public void Complete(XmlHyperlinks hyperlinks, IReadOnlyCollection<ConditionalFormatting> formattings)
     {
         var (document, sheetData) = WriteStartOnlyFirstTime();
         sheetData.Dispose();
@@ -249,6 +249,13 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
                     }
                 }
             }
+        }
+
+        var priority = formattings.Count;
+        foreach (var formatting in formattings)
+        {
+            formatting.Write(xml, priority);
+            priority--;
         }
 
         hyperlinks.WriteSheetPart(xml);

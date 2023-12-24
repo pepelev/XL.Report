@@ -1,6 +1,6 @@
 namespace XL.Report.Styles;
 
-public sealed class Borders : IEquatable<Borders>
+public sealed partial class Borders : IEquatable<Borders>
 {
     public Borders(
         Border? left = null,
@@ -41,44 +41,44 @@ public sealed class Borders : IEquatable<Borders>
 
             using (xml.WriteStartElement(XlsxStructure.Styles.Borders.Left))
             {
-                WriteElement(Left);
+                WriteElement(Left, xml);
             }
 
             using (xml.WriteStartElement(XlsxStructure.Styles.Borders.Right))
             {
-                WriteElement(Right);
+                WriteElement(Right, xml);
             }
 
             using (xml.WriteStartElement(XlsxStructure.Styles.Borders.Top))
             {
-                WriteElement(Top);
+                WriteElement(Top, xml);
             }
 
             using (xml.WriteStartElement(XlsxStructure.Styles.Borders.Bottom))
             {
-                WriteElement(Bottom);
+                WriteElement(Bottom, xml);
             }
 
             using (xml.WriteStartElement(XlsxStructure.Styles.Borders.Diagonal))
             {
-                WriteElement(Diagonal);
+                WriteElement(Diagonal, xml);
             }
         }
+    }
 
-        void WriteElement(IBorder? border)
+    private static void WriteElement(IBorder? border, Xml xml)
+    {
+        if (border == null)
         {
-            if (border == null)
-            {
-                return;
-            }
+            return;
+        }
 
-            xml.WriteAttribute("style", border.Style);
-            if (border.Color is { } color)
+        xml.WriteAttribute("style", border.Style);
+        if (border.Color is { } color)
+        {
+            using (xml.WriteStartElement("color"))
             {
-                using (xml.WriteStartElement("color"))
-                {
-                    xml.WriteAttribute("rgb", color.ToRGBHex());
-                }
+                xml.WriteAttribute("rgb", color.ToRGBHex());
             }
         }
     }

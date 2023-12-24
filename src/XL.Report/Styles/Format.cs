@@ -30,6 +30,26 @@ public sealed class Format : IEquatable<Format>
         return Code.GetHashCode();
     }
 
+    public void Write(Xml xml, int index)
+    {
+        using (xml.WriteStartElement("numFmt"))
+        {
+            xml.WriteAttribute("numFmtId", index);
+            xml.WriteAttribute("formatCode", Code);
+        }
+    }
+
+    public static void Write(Xml xml, IEnumerable<(Format Format, int Index)> formats)
+    {
+        using (xml.WriteStartElement("numFmts"))
+        {
+            foreach (var (format, index) in formats)
+            {
+                format.Write(xml, index);
+            }
+        }
+    }
+
     #region Formats
 
     public static Format General { get; } = new("General");
@@ -49,7 +69,7 @@ public sealed class Format : IEquatable<Format>
             );
         }
 
-        return new Format($"0.${new string('0', decimals)}");
+        return new Format($"0.{new string('0', decimals)}");
     }
 
     #endregion

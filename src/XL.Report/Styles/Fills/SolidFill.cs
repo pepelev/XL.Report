@@ -35,7 +35,14 @@ public sealed class SolidFill : Fill, IEquatable<SolidFill>
         using (xml.WriteStartElement(XlsxStructure.Styles.Fills.Pattern))
         {
             xml.WriteAttribute(XlsxStructure.Styles.Fills.PatternType, "solid");
+
+            // for both regular style and style diff
             using (xml.WriteStartElement("fgColor"))
+            {
+                xml.WriteAttribute("rgb", Color.ToRGBHex());
+            }
+
+            using (xml.WriteStartElement("bgColor"))
             {
                 xml.WriteAttribute("rgb", Color.ToRGBHex());
             }

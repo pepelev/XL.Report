@@ -1,29 +1,5 @@
 ﻿namespace XL.Report.Styles;
 
-/*
-Thick
-Thick
-MediumDashDotDot
-MediumDashDotDot
-Dashed
-Dashed
-Hair
-Hair
-Dotted
-Dotted
-DashDotDot
-DashDotDot
-DashDot
-DashDot
-Thin
-Thin
-SlantDashDot
-SlantDashDot
-MediumDashDot
-MediumDashDot
- */
-
-
 public sealed class BorderStyle : IEquatable<BorderStyle>, ISpanFormattable
 {
     public BorderStyle(string value)
@@ -35,12 +11,12 @@ public sealed class BorderStyle : IEquatable<BorderStyle>, ISpanFormattable
 
     public static BorderStyle Thick { get; } = new("thick");
     public static BorderStyle MediumDashDotDot { get; } = new("mediumDashDotDot");
-    public static BorderStyle Dashed { get; } = new("dashed");
-    public static BorderStyle Hair { get; } = new("hair");
-    public static BorderStyle Dotted { get; } = new("dotted");
-    public static BorderStyle DashDotDot { get; } = new("dashDotDot");
-    public static BorderStyle DashDot { get; } = new("dashDot");
-    public static BorderStyle Thin { get; } = new("thin");
+    public static BorderStyle Dashed { get; } = new("dashed"); //
+    public static BorderStyle Hair { get; } = new("hair"); // 
+    public static BorderStyle Dotted { get; } = new("dotted"); // 
+    public static BorderStyle DashDotDot { get; } = new("dashDotDot"); //
+    public static BorderStyle DashDot { get; } = new("dashDot"); //
+    public static BorderStyle Thin { get; } = new("thin"); //
     public static BorderStyle SlantDashDot { get; } = new("slantDashDot");
     public static BorderStyle MediumDashDot { get; } = new("mediumDashDot");
 

@@ -56,6 +56,49 @@ public sealed class Examples
     }
 
     [Test]
+    public void Conditional_Formattings()
+    {
+        using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
+
+        var random = new Random(Seed: 162317036);
+
+        using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
+        {
+            for (var y = 0; y < 3; y++)
+            {
+                var row = new Row(
+                    new Cell(new Number(random.Next(100))),
+                    new Cell(new Number(random.Next(100))),
+                    new Cell(new Number(random.Next(100))),
+                    new Cell(new Number(random.Next(100))),
+                    new Cell(new Number(random.Next(100))),
+                    new Cell(new Number(random.Next(100))),
+                    new Cell(new Number(random.Next(100))),
+                    new Cell(new Number(random.Next(100))),
+                    new Cell(new Number(random.Next(100))),
+                    new Cell(new Number(random.Next(100)))
+                );
+
+                sheet.WriteRow(row);
+            }
+
+            var formatting = new ConditionalFormatting(
+                Range.Parse("A1:J10"),
+                ConditionalFormatting.Rule.Duplicates,
+                book.Styles.Register(
+                    new Style.Diff(
+                        Fill: new SolidFill(new Color(10, 234, 196))
+                    )
+                )
+            );
+            sheet.AddConditionalFormatting(formatting);
+            sheet.Complete();
+        }
+
+        book.Complete();
+    }
+
+    [Test]
     public void Font_Styling()
     {
         using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);

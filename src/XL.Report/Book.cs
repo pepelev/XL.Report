@@ -19,6 +19,7 @@ public abstract class Book : IDisposable
         public abstract T WriteRow<T>(IUnit<T> unit);
         public abstract void DefineName(string name, Range range, string? comment = null);
         public abstract Hyperlinks Hyperlinks { get; }
+        public abstract void AddConditionalFormatting(ConditionalFormatting formatting);
         public abstract void Complete();
     }
 

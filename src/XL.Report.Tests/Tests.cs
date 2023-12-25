@@ -31,19 +31,20 @@ public sealed class Tests
 
         partially added:
         - formulas
+        - conditional-formatting
 
         todo add:
-        - conditional-formatting
+        - BlankContent : Content and others
+        - formulas.row and column references
+        - formulas.functions and combinations
+        - formulas.range-reference
+        - conditional-formatting.rest forms
         - row height
         - column styles
         - row styles
         - many styles within one cell
         - netstandard2.1 support
         - reorder sheets
-        - formulas.row and column references
-        - formulas.functions and combinations
-        - formulas.range-reference
-        - BlankContent : Content
      */
 
     [Test]

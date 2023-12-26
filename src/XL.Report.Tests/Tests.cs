@@ -28,13 +28,16 @@ public sealed class Tests
         - column width
         - merged cells
         - styles
+        - contents
 
         partially added:
         - formulas
         - conditional-formatting
 
         todo add:
-        - BlankContent : Content and others
+        - handy way to create cells and merges
+            - registration of styles inside
+            - selection of content type by parameter type
         - formulas.row and column references
         - formulas.functions and combinations
         - formulas.range-reference

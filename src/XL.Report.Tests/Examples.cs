@@ -3,6 +3,7 @@ using System.Text;
 using JetBrains.Annotations;
 using XL.Report.Styles;
 using XL.Report.Styles.Fills;
+using static XL.Report.Number;
 
 namespace XL.Report.Tests;
 
@@ -29,8 +30,33 @@ public sealed class Examples
         using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
         using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
         {
-            IUnit<Location> cell = new Cell(new Number(42));
+            IUnit<Location> cell = new Cell(new Integral(42));
             sheet.WriteRow(cell);
+            sheet.Complete();
+        }
+
+        book.Complete();
+    }
+
+    [Test]
+    public void Data_Types()
+    {
+        using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
+        using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
+        {
+            var dateStyle = Style.Default.With(Format.IsoDateTime);
+            var dateStyleId = book.Styles.Register(dateStyle);
+            var blueBackground = Style.Default.With(new SolidFill(new Color(45, 45, 180)));
+            var blueBackgroundId = book.Styles.Register(blueBackground);
+            var row = new Row(
+                new Cell(Bool.True),
+                new Cell(new Integral(42)),
+                new Cell(new InlineString("Hello")),
+                new Cell(new Instant(new DateTime(2012, 07, 15, 17, 30, 42)), dateStyleId),
+                new Cell(new Formula(new Expression.Verbatim("TODAY()")), dateStyleId),
+                new Cell(Content.Blank, blueBackgroundId)
+            );
+            sheet.WriteRow(row);
             sheet.Complete();
         }
 
@@ -44,8 +70,8 @@ public sealed class Examples
         using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
         {
             var row = new Row(
-                new Cell(new Number(42)),
-                new Cell(new Number(24)),
+                new Cell(new Integral(42)),
+                new Cell(new Integral(24)),
                 new Cell(new Formula(new Expression.Verbatim("A1+B1")))
             );
             sheet.WriteRow(row);
@@ -67,16 +93,16 @@ public sealed class Examples
             for (var y = 0; y < 3; y++)
             {
                 var row = new Row(
-                    new Cell(new Number(random.Next(100))),
-                    new Cell(new Number(random.Next(100))),
-                    new Cell(new Number(random.Next(100))),
-                    new Cell(new Number(random.Next(100))),
-                    new Cell(new Number(random.Next(100))),
-                    new Cell(new Number(random.Next(100))),
-                    new Cell(new Number(random.Next(100))),
-                    new Cell(new Number(random.Next(100))),
-                    new Cell(new Number(random.Next(100))),
-                    new Cell(new Number(random.Next(100)))
+                    new Cell(new Integral(random.Next(100))),
+                    new Cell(new Integral(random.Next(100))),
+                    new Cell(new Integral(random.Next(100))),
+                    new Cell(new Integral(random.Next(100))),
+                    new Cell(new Integral(random.Next(100))),
+                    new Cell(new Integral(random.Next(100))),
+                    new Cell(new Integral(random.Next(100))),
+                    new Cell(new Integral(random.Next(100))),
+                    new Cell(new Integral(random.Next(100))),
+                    new Cell(new Integral(random.Next(100)))
                 );
 
                 sheet.WriteRow(row);
@@ -236,7 +262,7 @@ public sealed class Examples
                     ),
                     (
                         new Cell(new InlineString("By content, number")) as IUnit<Range>,
-                        (HorizontalAlignment.ByContent, new Number(42) as Content)
+                        (HorizontalAlignment.ByContent, new Integral(42) as Content)
                     ),
                     (
                         new Cell(new InlineString("Left, no indent")) as IUnit<Range>,
@@ -485,7 +511,7 @@ public sealed class Examples
             using var sheet = book.CreateSheet($"{TestName} {i + 1}", SheetOptions.Default);
             var row = new Row(
                 new Cell(new InlineString("Sheet index:")),
-                new Cell(new Number(i))
+                new Cell(new Integral(i))
             );
             sheet.WriteRow(row);
             sheet.Complete();

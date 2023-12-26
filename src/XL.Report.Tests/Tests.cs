@@ -71,7 +71,7 @@ public sealed class Tests
             );
             var row = new Row(
                 new Cell(book.Strings.String("Hello world!")),
-                new Cell(new Number(509), book.Styles.Register(bigRed))
+                new Cell(new Number.Integral(509), book.Styles.Register(bigRed))
             );
 
             sheet.WriteRow(row);
@@ -92,7 +92,7 @@ public sealed class Tests
             );
             var row = new Row(
                 new Cell(book.Strings.String("Hello world!")),
-                new Cell(new Number(511), book.Styles.Register(bigRed))
+                new Cell(new Number.Integral(511), book.Styles.Register(bigRed))
             );
 
             sheet.WriteRow(row);
@@ -101,5 +101,16 @@ public sealed class Tests
         }
 
         book.Complete();
+    }
+
+    [Test]
+    public void METHOD()
+    {
+        var days = 14918;
+        var dateTime = new DateTime(1940, 11, 3).AddDays(-days);
+        Console.WriteLine(dateTime.ToString("O"));
+
+        var s = 8.33333333333333333333.ToString("0.000000000000");
+        Console.WriteLine(s);
     }
 }

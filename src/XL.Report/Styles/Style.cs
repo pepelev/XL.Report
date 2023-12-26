@@ -176,4 +176,7 @@ public sealed partial record Style(Appearance Appearance, Format Format)
             Borders = borders
         }
     };
+
+    [Pure]
+    public Style With(Format format) => this with { Format = format };
 }

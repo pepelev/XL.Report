@@ -14,6 +14,9 @@ public sealed class Units
     public Cell BlankCell(StyleId? styleId = null) => new(Content.Blank, styleId);
     public Cell BlankCell(Style style) => BlankCell(book.Styles.Register(style));
 
+    public Cell Cell(Content content, StyleId? styleId = null) => new(content, styleId);
+    public Cell Cell(Content content, Style style) => Cell(content, book.Styles.Register(style));
+
     public Cell Cell(string value, StyleId? styleId = null) => new(new String(value, book.Strings), styleId);
     public Cell Cell(string value, Style style) => Cell(value, book.Styles.Register(style));
 
@@ -28,7 +31,6 @@ public sealed class Units
 
     public Cell Cell(DateTime value, StyleId styleId) => new(new Number.Instant(value), styleId);
     public Cell Cell(DateTime value, Style style) => Cell(value, book.Styles.Register(style));
-    public Cell Cell(DateTime value) => Cell(value, Style.Default);
 
     public Cell Cell(bool value, StyleId? styleId = null) => new(Bool.From(value), styleId);
     public Cell Cell(bool value, Style style) => Cell(value, book.Styles.Register(style));
@@ -38,6 +40,9 @@ public sealed class Units
 
     public Merge BlankMerge(Size size, StyleId? styleId = null) => new(Content.Blank, size, styleId);
     public Merge BlankMerge(Size size, Style style) => BlankMerge(size, book.Styles.Register(style));
+
+    public Merge Merge(Content content, Size size, StyleId? styleId = null) => new(content, size, styleId);
+    public Merge Merge(Content content, Size size, Style style) => Merge(content, size, book.Styles.Register(style));
 
     public Merge Merge(string value, Size size, StyleId? styleId = null) => new(new String(value, book.Strings), size, styleId);
     public Merge Merge(string value, Size size, Style style) => Merge(value, size, book.Styles.Register(style));
@@ -53,7 +58,6 @@ public sealed class Units
 
     public Merge Merge(DateTime value, Size size, StyleId styleId) => new(new Number.Instant(value), size, styleId);
     public Merge Merge(DateTime value, Size size, Style style) => Merge(value, size, book.Styles.Register(style));
-    public Merge Merge(DateTime value, Size size) => Merge(value, size, Style.Default);
 
     public Merge Merge(bool value, Size size, StyleId? styleId = null) => new(Bool.From(value), size, styleId);
     public Merge Merge(bool value, Size size, Style style) => Merge(value, size, book.Styles.Register(style));

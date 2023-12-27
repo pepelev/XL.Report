@@ -28,9 +28,10 @@ public sealed class Examples
     public void Simplest_Book()
     {
         using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
+        var units = new Units(book);
         using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
         {
-            IUnit<Location> cell = new Cell(new Integral(42));
+            IUnit<Location> cell = units.Cell(42);
             sheet.WriteRow(cell);
             sheet.Complete();
         }
@@ -42,19 +43,18 @@ public sealed class Examples
     public void Data_Types()
     {
         using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
+        var units = new Units(book);
         using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
         {
             var dateStyle = Style.Default.With(Format.IsoDateTime);
-            var dateStyleId = book.Styles.Register(dateStyle);
             var blueBackground = Style.Default.With(new SolidFill(new Color(45, 45, 180)));
-            var blueBackgroundId = book.Styles.Register(blueBackground);
             var row = new Row(
-                new Cell(Bool.True),
-                new Cell(new Integral(42)),
-                new Cell(new InlineString("Hello")),
-                new Cell(new Instant(new DateTime(2012, 07, 15, 17, 30, 42)), dateStyleId),
-                new Cell(new Formula(new Expression.Verbatim("TODAY()")), dateStyleId),
-                new Cell(Content.Blank, blueBackgroundId)
+                units.Cell(true),
+                units.Cell(42),
+                units.Cell("Hello"),
+                units.Cell(new DateTime(2012, 07, 15, 17, 30, 42), dateStyle),
+                units.Cell(new Expression.Verbatim("TODAY()"), dateStyle),
+                units.BlankCell(blueBackground)
             );
             sheet.WriteRow(row);
             sheet.Complete();
@@ -67,12 +67,13 @@ public sealed class Examples
     public void Formulas()
     {
         using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
+        var units = new Units(book);
         using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
         {
             var row = new Row(
-                new Cell(new Integral(42)),
-                new Cell(new Integral(24)),
-                new Cell(new Formula(new Expression.Verbatim("A1+B1")))
+                units.Cell(42),
+                units.Cell(24),
+                units.Cell(new Expression.Verbatim("A1+B1"))
             );
             sheet.WriteRow(row);
             sheet.Complete();
@@ -85,24 +86,23 @@ public sealed class Examples
     public void Conditional_Formattings()
     {
         using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
-
+        var units = new Units(book);
         var random = new Random(Seed: 162317036);
-
         using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
         {
             for (var y = 0; y < 3; y++)
             {
                 var row = new Row(
-                    new Cell(new Integral(random.Next(100))),
-                    new Cell(new Integral(random.Next(100))),
-                    new Cell(new Integral(random.Next(100))),
-                    new Cell(new Integral(random.Next(100))),
-                    new Cell(new Integral(random.Next(100))),
-                    new Cell(new Integral(random.Next(100))),
-                    new Cell(new Integral(random.Next(100))),
-                    new Cell(new Integral(random.Next(100))),
-                    new Cell(new Integral(random.Next(100))),
-                    new Cell(new Integral(random.Next(100)))
+                    units.Cell(random.Next(100)),
+                    units.Cell(random.Next(100)),
+                    units.Cell(random.Next(100)),
+                    units.Cell(random.Next(100)),
+                    units.Cell(random.Next(100)),
+                    units.Cell(random.Next(100)),
+                    units.Cell(random.Next(100)),
+                    units.Cell(random.Next(100)),
+                    units.Cell(random.Next(100)),
+                    units.Cell(random.Next(100))
                 );
 
                 sheet.WriteRow(row);
@@ -128,27 +128,17 @@ public sealed class Examples
     public void Font_Styling()
     {
         using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
-        var styles = book.Styles;
+        var units = new Units(book);
         using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
         {
             var times = Style.Default.WithFontFamily("Times New Roman");
             var row = new Row(
-                new Cell(new InlineString("Without style")),
-                new Cell(new InlineString("Default"), styles.Register(Style.Default)),
-                new Cell(new InlineString("Times New Roman"), styles.Register(times)),
-                new Cell(new InlineString("Big times"), styles.Register(times.WithFontSize(20))),
-                new Cell(
-                    new InlineString("Orange"),
-                    styles.Register(
-                        Style.Default.WithFontColor(new Color(255, 100, 15))
-                    )
-                ),
-                new Cell(
-                    new InlineString("Green"),
-                    styles.Register(
-                        Style.Default.WithFontColor(new Color(15, 200, 15))
-                    )
-                )
+                units.Cell("Without style"),
+                units.Cell("Default", Style.Default),
+                units.Cell("Times New Roman", times),
+                units.Cell("Big times", times.WithFontSize(20)),
+                units.Cell("Orange", Style.Default.WithFontColor(new Color(255, 100, 15))),
+                units.Cell("Green", Style.Default.WithFontColor(new Color(15, 200, 15)))
             );
 
             sheet.WriteRow(row);
@@ -162,6 +152,7 @@ public sealed class Examples
     public void Styling()
     {
         using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
+        var units = new Units(book);
         var styles = book.Styles;
         var bold = styles.Register(Style.Default.Bold());
         var options = new SheetOptions(
@@ -188,63 +179,31 @@ public sealed class Examples
         );
         using (var sheet = book.CreateSheet(TestName, options))
         {
-            sheet.WriteRow<Range>(new Cell(new InlineString("Fonts:"), bold));
+            sheet.WriteRow<Range>(units.Cell("Fonts:", bold));
             sheet.WriteRow(
                 new Row(
-                    new Cell(
-                        new InlineString("Default")
-                    ),
-                    new Cell(
-                        new InlineString("Arial"),
-                        styles.Register(Style.Default.WithFontFamily("Arial"))
-                    ),
-                    new Cell(
-                        new InlineString("Arial 14"),
-                        styles.Register(Style.Default.WithFontFamily("Arial").WithFontSize(14))
-                    ),
-                    new Cell(
-                        new InlineString("Arial red"),
-                        styles.Register(Style.Default.WithFontFamily("Arial").WithFontColor(new Color(240, 0, 0)))
-                    ),
-                    new Cell(
-                        new InlineString("Bold"),
-                        styles.Register(Style.Default.Bold())
-                    ),
-                    new Cell(
-                        new InlineString("Italic"),
-                        styles.Register(Style.Default.Italic())
-                    ),
-                    new Cell(
-                        new InlineString("Strikethrough"),
-                        styles.Register(Style.Default.Strikethrough())
-                    ),
-                    new Cell(
-                        new InlineString("Superscript"),
-                        styles.Register(Style.Default.Superscript())
-                    ),
-                    new Cell(
-                        new InlineString("Subscript"),
-                        styles.Register(Style.Default.Subscript())
-                    ),
-                    new Cell(
-                        new InlineString("Underline single"),
-                        styles.Register(Style.Default.Underline())
-                    ),
-                    new Cell(
-                        new InlineString("Underline double"),
-                        styles.Register(Style.Default.Underline(Underline.Double))
-                    ),
-                    new Cell(
-                        new InlineString("Underline single by cell"),
-                        styles.Register(Style.Default.Underline(Underline.SingleByCell))
-                    ),
-                    new Cell(
-                        new InlineString("Underline double by cell"),
-                        styles.Register(Style.Default.Underline(Underline.DoubleByCell))
-                    ),
-                    new Cell(
-                        new InlineString("Composite"),
-                        styles.Register(Style.Default.Bold().Italic().Strikethrough().Subscript().Underline().WithFontColor(new Color(240, 0, 0)))
+                    units.Cell("Default"),
+                    units.Cell("Arial", Style.Default.WithFontFamily("Arial")),
+                    units.Cell("Arial 14", Style.Default.WithFontFamily("Arial").WithFontSize(14)),
+                    units.Cell("Arial red", Style.Default.WithFontFamily("Arial").WithFontColor(new Color(240, 0, 0))),
+                    units.Cell("Bold", Style.Default.Bold()),
+                    units.Cell("Italic", Style.Default.Italic()),
+                    units.Cell("Strikethrough", Style.Default.Strikethrough()),
+                    units.Cell("Superscript", Style.Default.Superscript()),
+                    units.Cell("Subscript", Style.Default.Subscript()),
+                    units.Cell("Underline single", Style.Default.Underline()),
+                    units.Cell("Underline double", Style.Default.Underline(Underline.Double)),
+                    units.Cell("Underline single by cell", Style.Default.Underline(Underline.SingleByCell)),
+                    units.Cell("Underline double by cell", Style.Default.Underline(Underline.DoubleByCell)),
+                    units.Cell(
+                        "Composite",
+                        Style.Default
+                            .Bold()
+                            .Italic()
+                            .Strikethrough()
+                            .Subscript()
+                            .Underline()
+                            .WithFontColor(new Color(240, 0, 0))
                     )
                 )
             );
@@ -257,240 +216,232 @@ public sealed class Examples
                 xAspects: new[]
                 {
                     (
-                        new Cell(new InlineString("By content, string")) as IUnit<Range>,
+                        units.Cell("By content, string") as IUnit<Range>,
                         (HorizontalAlignment.ByContent, new InlineString("value") as Content)
                     ),
                     (
-                        new Cell(new InlineString("By content, number")) as IUnit<Range>,
+                        units.Cell("By content, number") as IUnit<Range>,
                         (HorizontalAlignment.ByContent, new Integral(42) as Content)
                     ),
                     (
-                        new Cell(new InlineString("Left, no indent")) as IUnit<Range>,
+                        units.Cell("Left, no indent") as IUnit<Range>,
                         (HorizontalAlignment.Left(), new InlineString("value") as Content)
                     ),
                     (
-                        new Cell(new InlineString("Left, indent")) as IUnit<Range>,
+                        units.Cell("Left, indent") as IUnit<Range>,
                         (HorizontalAlignment.Left(indent: 3), new InlineString("value") as Content)
                     ),
                     (
-                        new Cell(new InlineString("Center")) as IUnit<Range>,
+                        units.Cell("Center") as IUnit<Range>,
                         (HorizontalAlignment.Center, new InlineString("value") as Content)
                     ),
                     (
-                        new Cell(new InlineString("Center continuous")) as IUnit<Range>,
+                        units.Cell("Center continuous") as IUnit<Range>,
                         (HorizontalAlignment.CenterContinuous, new InlineString("value") as Content)
                     ),
                     (
-                        new Cell(new InlineString("Right, no indent")) as IUnit<Range>,
+                        units.Cell("Right, no indent") as IUnit<Range>,
                         (HorizontalAlignment.Right(), new InlineString("value") as Content)
                     ),
                     (
-                        new Cell(new InlineString("Right, indent")) as IUnit<Range>,
+                        units.Cell("Right, indent") as IUnit<Range>,
                         (HorizontalAlignment.Right(indent: 3), new InlineString("value") as Content)
                     ),
                     (
-                        new Cell(new InlineString("Fill")) as IUnit<Range>,
+                        units.Cell("Fill") as IUnit<Range>,
                         (HorizontalAlignment.Fill, new InlineString("value") as Content)
                     ),
                     (
-                        new Cell(new InlineString("Justify")) as IUnit<Range>,
+                        units.Cell("Justify") as IUnit<Range>,
                         (HorizontalAlignment.Justify, new InlineString("The quick brown fox jumps over the lazy dog") as Content)
                     ),
                     (
-                        new Cell(new InlineString("Distributed, no indent")) as IUnit<Range>,
+                        units.Cell("Distributed, no indent") as IUnit<Range>,
                         (HorizontalAlignment.Distributed(), new InlineString("The quick brown fox jumps over the lazy dog") as Content)
                     ),
                     (
-                        new Cell(new InlineString("Distributed, indent")) as IUnit<Range>,
+                        units.Cell("Distributed, indent") as IUnit<Range>,
                         (HorizontalAlignment.Distributed(indent: 3), new InlineString("The quick brown fox jumps over the lazy dog") as Content)
                     ),
                     (
-                        new Cell(new InlineString("Distributed, JustifyLastLine")) as IUnit<Range>,
+                        units.Cell("Distributed, JustifyLastLine") as IUnit<Range>,
                         (HorizontalAlignment.DistributedJustifyLastLine, new InlineString("The quick brown fox jumps over the lazy dog") as Content)
                     ),
                 },
-                yHeader: new Cell(new InlineString("Alignments.Vertical")),
+                yHeader: units.Cell("Alignments.Vertical"),
                 yAspects: new[]
                 {
-                    (new Cell(new InlineString("Bottom")) as IUnit<Range>, VerticalAlignment.Bottom),
-                    (new Cell(new InlineString("Center")) as IUnit<Range>, VerticalAlignment.Center),
-                    (new Cell(new InlineString("Top")) as IUnit<Range>, VerticalAlignment.Top),
-                    (new Cell(new InlineString("Distributed")) as IUnit<Range>, VerticalAlignment.Distributed),
-                    (new Cell(new InlineString("Justify")) as IUnit<Range>, VerticalAlignment.Justify),
+                    (units.Cell("Bottom") as IUnit<Range>, VerticalAlignment.Bottom),
+                    (units.Cell("Center") as IUnit<Range>, VerticalAlignment.Center),
+                    (units.Cell("Top") as IUnit<Range>, VerticalAlignment.Top),
+                    (units.Cell("Distributed") as IUnit<Range>, VerticalAlignment.Distributed),
+                    (units.Cell("Justify") as IUnit<Range>, VerticalAlignment.Justify),
                 },
                 cellSize: Size.Cell,
-                (pair, verticalAlignment) => new Cell(
+                (pair, verticalAlignment) => units.Cell(
                     pair.Content,
-                    styles.Register(
-                        Style.Default.With(pair.HorizontalAlignment).With(verticalAlignment)
-                    )
+                    Style.Default.With(pair.HorizontalAlignment).With(verticalAlignment)
                 )
             );
 
-            sheet.WriteRow<Range>(new Cell(new InlineString("Alignments:"), bold));
+            sheet.WriteRow<Range>(units.Cell("Alignments:", bold));
             sheet.WriteRow(matrix);
 
             sheet.WriteRow(new BlankRow(3));
 
-            sheet.WriteRow<Range>(new Cell(new InlineString("Fills:"), bold));
+            sheet.WriteRow<Range>(units.Cell("Fills:", bold));
 
             sheet.WriteRow(
                 new Row(
                     new Column(
-                        new Cell(new InlineString("Solid")),
-                        new Cell(new InlineString(""), styles.Register(Style.Default.With(new SolidFill(new Color(10, 234, 196)))))
+                        units.Cell("Solid"),
+                        units.Cell("", Style.Default.With(new SolidFill(new Color(10, 234, 196))))
                     ),
                     new Column(
-                        new Cell(new InlineString("Pattern MediumGray")),
-                        new Cell(new InlineString(""), styles.Register(Style.Default.With(new PatternFill(Pattern.MediumGray, new Color(20, 20, 70), background: new Color(10, 234, 196)))))
+                        units.Cell("Pattern MediumGray"),
+                        units.Cell("", Style.Default.With(new PatternFill(Pattern.MediumGray, new Color(20, 20, 70), background: new Color(10, 234, 196))))
                     ),
                     new Column(
-                        new Cell(new InlineString("Pattern DarkGray")),
-                        new Cell(new InlineString(""), styles.Register(Style.Default.With(new PatternFill(Pattern.DarkGray, new Color(20, 20, 70), background: new Color(10, 234, 196)))))
+                        units.Cell("Pattern DarkGray"),
+                        units.Cell("", Style.Default.With(new PatternFill(Pattern.DarkGray, new Color(20, 20, 70), background: new Color(10, 234, 196))))
                     ),
                     new Column(
-                        new Cell(new InlineString("Pattern LightGray")),
-                        new Cell(new InlineString(""), styles.Register(Style.Default.With(new PatternFill(Pattern.LightGray, new Color(20, 20, 70), background: new Color(10, 234, 196)))))
+                        units.Cell("Pattern LightGray"),
+                        units.Cell("", Style.Default.With(new PatternFill(Pattern.LightGray, new Color(20, 20, 70), background: new Color(10, 234, 196))))
                     ),
                     new Column(
-                        new Cell(new InlineString("Pattern DarkHorizontal")),
-                        new Cell(new InlineString(""), styles.Register(Style.Default.With(new PatternFill(Pattern.DarkHorizontal, new Color(20, 20, 70), background: new Color(10, 234, 196)))))
+                        units.Cell("Pattern DarkHorizontal"),
+                        units.Cell("", Style.Default.With(new PatternFill(Pattern.DarkHorizontal, new Color(20, 20, 70), background: new Color(10, 234, 196))))
                     ),
                     new Column(
-                        new Cell(new InlineString("Pattern DarkVertical")),
-                        new Cell(new InlineString(""), styles.Register(Style.Default.With(new PatternFill(Pattern.DarkVertical, new Color(20, 20, 70), background: new Color(10, 234, 196)))))
+                        units.Cell("Pattern DarkVertical"),
+                        units.Cell("", Style.Default.With(new PatternFill(Pattern.DarkVertical, new Color(20, 20, 70), background: new Color(10, 234, 196))))
                     ),
                     new Column(
-                        new Cell(new InlineString("Pattern DarkDown")),
-                        new Cell(new InlineString(""), styles.Register(Style.Default.With(new PatternFill(Pattern.DarkDown, new Color(20, 20, 70), background: new Color(10, 234, 196)))))
+                        units.Cell("Pattern DarkDown"),
+                        units.Cell("", Style.Default.With(new PatternFill(Pattern.DarkDown, new Color(20, 20, 70), background: new Color(10, 234, 196))))
                     ),
                     new Column(
-                        new Cell(new InlineString("Pattern DarkUp")),
-                        new Cell(new InlineString(""), styles.Register(Style.Default.With(new PatternFill(Pattern.DarkUp, new Color(20, 20, 70), background: new Color(10, 234, 196)))))
+                        units.Cell("Pattern DarkUp"),
+                        units.Cell("", Style.Default.With(new PatternFill(Pattern.DarkUp, new Color(20, 20, 70), background: new Color(10, 234, 196))))
                     ),
                     new Column(
-                        new Cell(new InlineString("Pattern DarkGrid")),
-                        new Cell(new InlineString(""), styles.Register(Style.Default.With(new PatternFill(Pattern.DarkGrid, new Color(20, 20, 70), background: new Color(10, 234, 196)))))
+                        units.Cell("Pattern DarkGrid"),
+                        units.Cell("", Style.Default.With(new PatternFill(Pattern.DarkGrid, new Color(20, 20, 70), background: new Color(10, 234, 196))))
                     ),
                     new Column(
-                        new Cell(new InlineString("Pattern DarkTrellis")),
-                        new Cell(new InlineString(""), styles.Register(Style.Default.With(new PatternFill(Pattern.DarkTrellis, new Color(20, 20, 70), background: new Color(10, 234, 196)))))
+                        units.Cell("Pattern DarkTrellis"),
+                        units.Cell("", Style.Default.With(new PatternFill(Pattern.DarkTrellis, new Color(20, 20, 70), background: new Color(10, 234, 196))))
                     ),
                     new Column(
-                        new Cell(new InlineString("Pattern LightHorizontal")),
-                        new Cell(new InlineString(""), styles.Register(Style.Default.With(new PatternFill(Pattern.LightHorizontal, new Color(20, 20, 70), background: new Color(10, 234, 196)))))
+                        units.Cell("Pattern LightHorizontal"),
+                        units.Cell("", Style.Default.With(new PatternFill(Pattern.LightHorizontal, new Color(20, 20, 70), background: new Color(10, 234, 196))))
                     ),
                     new Column(
-                        new Cell(new InlineString("Pattern LightVertical")),
-                        new Cell(new InlineString(""), styles.Register(Style.Default.With(new PatternFill(Pattern.LightVertical, new Color(20, 20, 70), background: new Color(10, 234, 196)))))
+                        units.Cell("Pattern LightVertical"),
+                        units.Cell("", Style.Default.With(new PatternFill(Pattern.LightVertical, new Color(20, 20, 70), background: new Color(10, 234, 196))))
                     ),
                     new Column(
-                        new Cell(new InlineString("Pattern LightDown")),
-                        new Cell(new InlineString(""), styles.Register(Style.Default.With(new PatternFill(Pattern.LightDown, new Color(20, 20, 70), background: new Color(10, 234, 196)))))
+                        units.Cell("Pattern LightDown"),
+                        units.Cell("", Style.Default.With(new PatternFill(Pattern.LightDown, new Color(20, 20, 70), background: new Color(10, 234, 196))))
                     ),
                     new Column(
-                        new Cell(new InlineString("Pattern LightUp")),
-                        new Cell(new InlineString(""), styles.Register(Style.Default.With(new PatternFill(Pattern.LightUp, new Color(20, 20, 70), background: new Color(10, 234, 196)))))
+                        units.Cell("Pattern LightUp"),
+                        units.Cell("", Style.Default.With(new PatternFill(Pattern.LightUp, new Color(20, 20, 70), background: new Color(10, 234, 196))))
                     ),
                     new Column(
-                        new Cell(new InlineString("Pattern LightGrid")),
-                        new Cell(new InlineString(""), styles.Register(Style.Default.With(new PatternFill(Pattern.LightGrid, new Color(20, 20, 70), background: new Color(10, 234, 196)))))
+                        units.Cell("Pattern LightGrid"),
+                        units.Cell("", Style.Default.With(new PatternFill(Pattern.LightGrid, new Color(20, 20, 70), background: new Color(10, 234, 196))))
                     ),
                     new Column(
-                        new Cell(new InlineString("Pattern LightTrellis")),
-                        new Cell(new InlineString(""), styles.Register(Style.Default.With(new PatternFill(Pattern.LightTrellis, new Color(20, 20, 70), background: new Color(10, 234, 196)))))
+                        units.Cell("Pattern LightTrellis"),
+                        units.Cell("", Style.Default.With(new PatternFill(Pattern.LightTrellis, new Color(20, 20, 70), background: new Color(10, 234, 196))))
                     ),
                     new Column(
-                        new Cell(new InlineString("Pattern Gray125")),
-                        new Cell(new InlineString(""), styles.Register(Style.Default.With(new PatternFill(Pattern.Gray125, new Color(20, 20, 70), background: new Color(10, 234, 196)))))
+                        units.Cell("Pattern Gray125"),
+                        units.Cell("", Style.Default.With(new PatternFill(Pattern.Gray125, new Color(20, 20, 70), background: new Color(10, 234, 196))))
                     ),
                     new Column(
-                        new Cell(new InlineString("Pattern Gray0625")),
-                        new Cell(new InlineString(""),
-                            styles.Register(Style.Default.With(new PatternFill(Pattern.Gray0625, new Color(20, 20, 70), background: new Color(10, 234, 196))))
-                        )
+                        units.Cell("Pattern Gray0625"),
+                        units.Cell("", Style.Default.With(new PatternFill(Pattern.Gray0625, new Color(20, 20, 70), background: new Color(10, 234, 196))))
                     )
                 )
             );
 
             sheet.WriteRow(new BlankRow(3));
 
-            sheet.WriteRow<Range>(new Cell(new InlineString("Borders:"), bold));
+            sheet.WriteRow<Range>(units.Cell("Borders:", bold));
             sheet.WriteRow(new BlankRow());
             sheet.WriteRow(
                 new Row(
                     new BlankColumn(),
-                    new Cell(
-                        new InlineString("Left Top"),
-                        styles.Register(
-                            Style.Default.With(
-                                new Borders(
-                                    left: new Border(BorderStyle.Thick, new Color(20, 150, 20)),
-                                    top: new Border(BorderStyle.Thick, new Color(240, 20, 20))
-                                )
+                    units.Cell(
+                        "Left Top",
+                        Style.Default.With(
+                            new Borders(
+                                left: new Border(BorderStyle.Thick, new Color(20, 150, 20)),
+                                top: new Border(BorderStyle.Thick, new Color(240, 20, 20))
                             )
                         )
                     ),
                     new BlankColumn(),
-                    new Cell(
-                        new InlineString("Diagonal"),
-                        styles.Register(
-                            Style.Default.With(
-                                new Borders(
-                                    diagonal: new DiagonalBorders(BorderStyle.Thin, new Color(240, 150, 150), down: true, up: false)
-                                )
+                    units.Cell(
+                        "Diagonal",
+                        Style.Default.With(
+                            new Borders(
+                                diagonal: new DiagonalBorders(BorderStyle.Thin, new Color(240, 150, 150), down: true, up: false)
                             )
                         )
                     ),
                     new BlankColumn(),
-                    new Cell(
-                        new InlineString("Thick"),
-                        styles.Register(Style.Default.With(Borders.Perimeter(new Border(BorderStyle.Thick, new Color(240, 20, 20)))))
+                    units.Cell(
+                        "Thick",
+                        Style.Default.With(Borders.Perimeter(new Border(BorderStyle.Thick, new Color(240, 20, 20))))
                     ),
                     new BlankColumn(),
-                    new Cell(
-                        new InlineString("MediumDashDotDot"),
-                        styles.Register(Style.Default.With(Borders.Perimeter(new Border(BorderStyle.MediumDashDotDot, new Color(240, 20, 20)))))
+                    units.Cell(
+                        "MediumDashDotDot",
+                        Style.Default.With(Borders.Perimeter(new Border(BorderStyle.MediumDashDotDot, new Color(240, 20, 20))))
                     ),
                     new BlankColumn(),
-                    new Cell(
-                        new InlineString("Dashed"),
-                        styles.Register(Style.Default.With(Borders.Perimeter(new Border(BorderStyle.Dashed, new Color(240, 20, 20)))))
+                    units.Cell(
+                        "Dashed",
+                        Style.Default.With(Borders.Perimeter(new Border(BorderStyle.Dashed, new Color(240, 20, 20))))
                     ),
                     new BlankColumn(),
-                    new Cell(
-                        new InlineString("Hair"),
-                        styles.Register(Style.Default.With(Borders.Perimeter(new Border(BorderStyle.Hair, new Color(240, 20, 20)))))
+                    units.Cell(
+                        "Hair",
+                        Style.Default.With(Borders.Perimeter(new Border(BorderStyle.Hair, new Color(240, 20, 20))))
                     ),
                     new BlankColumn(),
-                    new Cell(
-                        new InlineString("Dotted"),
-                        styles.Register(Style.Default.With(Borders.Perimeter(new Border(BorderStyle.Dotted, new Color(240, 20, 20)))))
+                    units.Cell(
+                        "Dotted",
+                        Style.Default.With(Borders.Perimeter(new Border(BorderStyle.Dotted, new Color(240, 20, 20))))
                     ),
                     new BlankColumn(),
-                    new Cell(
-                        new InlineString("DashDotDot"),
-                        styles.Register(Style.Default.With(Borders.Perimeter(new Border(BorderStyle.DashDotDot, new Color(240, 20, 20)))))
+                    units.Cell(
+                        "DashDotDot",
+                        Style.Default.With(Borders.Perimeter(new Border(BorderStyle.DashDotDot, new Color(240, 20, 20))))
                     ),
                     new BlankColumn(),
-                    new Cell(
-                        new InlineString("DashDot"),
-                        styles.Register(Style.Default.With(Borders.Perimeter(new Border(BorderStyle.DashDot, new Color(240, 20, 20)))))
+                    units.Cell(
+                        "DashDot",
+                        Style.Default.With(Borders.Perimeter(new Border(BorderStyle.DashDot, new Color(240, 20, 20))))
                     ),
                     new BlankColumn(),
-                    new Cell(
-                        new InlineString("Thin"),
-                        styles.Register(Style.Default.With(Borders.Perimeter(new Border(BorderStyle.Thin, new Color(240, 20, 20)))))
+                    units.Cell(
+                        "Thin",
+                        Style.Default.With(Borders.Perimeter(new Border(BorderStyle.Thin, new Color(240, 20, 20))))
                     ),
                     new BlankColumn(),
-                    new Cell(
-                        new InlineString("SlantDashDot"),
-                        styles.Register(Style.Default.With(Borders.Perimeter(new Border(BorderStyle.SlantDashDot, new Color(240, 20, 20)))))
+                    units.Cell(
+                        "SlantDashDot",
+                        Style.Default.With(Borders.Perimeter(new Border(BorderStyle.SlantDashDot, new Color(240, 20, 20))))
                     ),
                     new BlankColumn(),
-                    new Cell(
-                        new InlineString("MediumDashDot"),
-                        styles.Register(Style.Default.With(Borders.Perimeter(new Border(BorderStyle.MediumDashDot, new Color(240, 20, 20)))))
+                    units.Cell(
+                        "MediumDashDot",
+                        Style.Default.With(Borders.Perimeter(new Border(BorderStyle.MediumDashDot, new Color(240, 20, 20))))
                     )
                 )
             );
@@ -505,13 +456,13 @@ public sealed class Examples
     public void Multiple_Sheets()
     {
         using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
-
+        var units = new Units(book);
         for (var i = 0; i < 10; i++)
         {
             using var sheet = book.CreateSheet($"{TestName} {i + 1}", SheetOptions.Default);
             var row = new Row(
-                new Cell(new InlineString("Sheet index:")),
-                new Cell(new Integral(i))
+                units.Cell("Sheet index:"),
+                units.Cell(i)
             );
             sheet.WriteRow(row);
             sheet.Complete();
@@ -524,13 +475,10 @@ public sealed class Examples
     public void Merged_Cell()
     {
         using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
-
+        var units = new Units(book);
         using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
         {
-            var row = new Merge(
-                new InlineString("Merged cell"),
-                new Size(5, 2)
-            );
+            var row = units.Merge("Merged cell", new Size(5, 2));
             sheet.WriteRow(row);
             sheet.Complete();
         }
@@ -546,7 +494,7 @@ public sealed class Examples
         var contents = Array(1024, RandomWord);
 
         using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
-
+        var units = new Units(book);
         using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
         {
             for (var i = 0; i < 100_000; i++)
@@ -554,9 +502,9 @@ public sealed class Examples
                 var rowLength = random.Next(10, 40);
                 var cells = Array(
                     rowLength,
-                    () => new Cell(
-                        book.Strings.String(random.Pick(contents)),
-                        book.Styles.Register(random.Pick(styles))
+                    () => units.Cell(
+                        random.Pick(contents),
+                        random.Pick(styles)
                     ) as IUnit<Range>
                 );
                 var row = new Row(cells);
@@ -591,15 +539,15 @@ public sealed class Examples
     public void Hyperlinks()
     {
         using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
-
+        var units = new Units(book);
         using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
         {
             var row = new Row(
-                new Cell(new InlineString("example.com")),
-                new Cell(new InlineString("mail")),
-                new Cell(new InlineString("file")),
-                new Cell(new InlineString("range")),
-                new Cell(new InlineString("defined name"))
+                units.Cell("example.com"),
+                units.Cell("mail"),
+                units.Cell("file"),
+                units.Cell("range"),
+                units.Cell("defined name")
             );
             sheet.WriteRow(row);
             sheet.DefineName("area", Range.Parse("E2:E5"));

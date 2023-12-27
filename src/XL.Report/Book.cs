@@ -25,11 +25,3 @@ public abstract class Book : IDisposable
 
     public abstract void Dispose();
 }
-
-public static class Hyperlink
-{
-    public static string Mailto(string email, string? subject = null) =>
-        subject is { } value
-            ? $"mailto:{email}?subject={value}"
-            : $"mailto:{email}";
-}

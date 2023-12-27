@@ -29,15 +29,15 @@ public sealed class Tests
         - merged cells
         - styles
         - contents
+        - handy way to create cells and merges
+            - registration of styles inside
+            - selection of content type by parameter type
 
         partially added:
         - formulas
         - conditional-formatting
 
         todo add:
-        - handy way to create cells and merges
-            - registration of styles inside
-            - selection of content type by parameter type
         - formulas.row and column references
         - formulas.functions and combinations
         - formulas.range-reference

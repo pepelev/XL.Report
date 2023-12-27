@@ -52,7 +52,7 @@ public sealed class Format : IEquatable<Format>
 
     #region Formats
 
-    public static Format General { get; } = new("General");
+    public static Format General { get; } = new("@");
     public static Format IsoDate { get; } = new("yyyy-mm-dd");
     public static Format IsoTime { get; } = new("hh:mm:ss");
     public static Format IsoDateTime { get; } = new(@"yyyy-mm-dd""T""hh:mm:ss");

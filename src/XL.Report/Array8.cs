@@ -67,20 +67,20 @@ public struct Stack<T, TBuffer> where TBuffer : IBuffer<T>
 
 
 
-public enum IteratorState
+public enum IteratorState : byte
 {
     BeforeTree,
     InsideTree,
     AfterTree
 }
 
-internal enum PushStrategy
+internal enum Descent : byte
 {
-    First,
-    Last
+    Left,
+    Right
 }
 
-internal enum Move
+internal enum Move : byte
 {
     Next,
     Previous
@@ -148,11 +148,14 @@ public sealed class BTreeSlim<TKey, T> : IEnumerable<T>
 
     public struct Iterator
     {
+        private record struct Entry(Descent Descent, Node Node, int Index);
         private readonly BTreeSlim<TKey, T> tree;
         private Move lastMove;
 
         // todo Buffer8 is too small
-        private Stack<(Node Node, int Index), Buffer8<(Node Node, int Index)>> stack = new(new Buffer8<(Node Node, int Index)>());
+        private Stack<Entry, Buffer8<Entry>> stack = new(new Buffer8<Entry>());
+        private Stack<Node, Buffer8<Node>> stack2 = new(new Buffer8<Node>());
+        private int index;
 
         public Iterator(BTreeSlim<TKey, T> tree)
         {
@@ -202,38 +205,64 @@ public sealed class BTreeSlim<TKey, T> : IEnumerable<T>
         {
             if (State == IteratorState.BeforeTree)
             {
-                Push(tree.root, PushStrategy.First);
+                Push(tree.root, Descent.Left);
                 return;
             }
 
             if (State == IteratorState.InsideTree)
             {
-                if (stack.IsEmpty)
+                var currentNode = stack2.Peek();
+                if (currentNode is Node.Leaf leaf)
                 {
-                    return;
-                }
-
-                ref var currentFrame = ref stack.Peek();
-                if (currentFrame.Node is Node.Leaf leaf)
-                {
-                    currentFrame.Index++;
-                    if (leaf.Items.Count <= currentFrame.Index)
+                    index++;
+                    if (index < leaf.Items.Count)
                     {
-                        stack.Pop();
-                    }
-                }
-                else
-                {
-                    var nonLeaf = (Node.NonLeaf)currentFrame.Node;
-                    var newFrameIndex = currentFrame.Index + 1;
-                    currentFrame.Index++;
-                    if (nonLeaf.Items.Count <= newFrameIndex)
-                    {
-                        stack.Pop();
+                        return;
                     }
 
-                    Push(nonLeaf.Children.Content[newFrameIndex], PushStrategy.First);
+                    stack.Pop();
+                    while (!stack2.IsEmpty)
+                    {
+                        var node = (Node.NonLeaf)stack2.Peek();
+                        node.Children
+                    }
                 }
+
+                // if (stack.IsEmpty)
+                // {
+                //     return;
+                // }
+                //
+                // {
+                //     ref var currentFrame = ref stack.Peek();
+                //     if (currentFrame.Node is Node.Leaf leaf)
+                //     {
+                //         currentFrame.Index++;
+                //         var descent = currentFrame.Descent;
+                //         if (leaf.Items.Count <= currentFrame.Index)
+                //         {
+                //             stack.Pop();
+                //             if (descent == Descent.Left)
+                //             {
+                //                 return;
+                //             }
+                //
+                //
+                //         }
+                //     }
+                //     else
+                //     {
+                //         var nonLeaf = (Node.NonLeaf)currentFrame.Node;
+                //         var newFrameIndex = currentFrame.Index + 1;
+                //         currentFrame.Index++;
+                //         if (nonLeaf.Items.Count <= newFrameIndex)
+                //         {
+                //             stack.Pop();
+                //         }
+                //
+                //         Push(nonLeaf.Children.Content[newFrameIndex], Descent.Left);
+                //     }
+                // }
             }
         }
 
@@ -247,7 +276,7 @@ public sealed class BTreeSlim<TKey, T> : IEnumerable<T>
         {
             if (State == IteratorState.AfterTree)
             {
-                Push(tree.root, PushStrategy.Last);
+                Push(tree.root, Descent.Right);
                 return;
             }
 
@@ -277,12 +306,12 @@ public sealed class BTreeSlim<TKey, T> : IEnumerable<T>
                         stack.Pop();
                     }
 
-                    Push(nonLeaf.Children.Content[childIndex], PushStrategy.Last);
+                    Push(nonLeaf.Children.Content[childIndex], Descent.Right);
                 }
             }
         }
 
-        private void Push(Node node, PushStrategy strategy)
+        private void Push(Node node, Descent strategy)
         {
             while (true)
             {
@@ -290,25 +319,25 @@ public sealed class BTreeSlim<TKey, T> : IEnumerable<T>
                 {
                     if (leaf.Items.Count > 0)
                     {
-                        var index = strategy == PushStrategy.First
+                        var index = strategy == Descent.Left
                             ? 0
                             : leaf.Items.Count - 1;
-                        stack.Push((node, index));
+                        stack.Push(new Entry(strategy, node, index));
                     }
 
                     return;
                 }
-                else
+
                 {
                     var nonLeaf = (Node.NonLeaf)node;
-                    var index = strategy == PushStrategy.First
+                    var index = strategy == Descent.Left
                         ? 0
                         : nonLeaf.Items.Count - 1;
-                    var childIndex = strategy == PushStrategy.First
+                    var childIndex = strategy == Descent.Left
                         ? 0
                         : index + 1;
 
-                    stack.Push((nonLeaf, index));
+                    stack.Push(new Entry(strategy, nonLeaf, index));
 
                     node = nonLeaf.Children.Content[childIndex];
                 }

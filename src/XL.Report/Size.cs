@@ -66,7 +66,7 @@ public readonly struct Size : IEquatable<Size>
     public Size MultiplyHeight(int factor) => new(Width, Height * factor);
 
     [Pure]
-    public bool Contains(Size size) => size.Width <= Width && size.Height <= Height;
+    public bool Accomodates(Size size) => size.Width <= Width && size.Height <= Height;
 
     public static Size operator *(Size size, int factor) => new(size.Width * factor, size.Height * factor);
 }

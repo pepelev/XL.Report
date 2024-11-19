@@ -67,7 +67,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         }
 
         var range = Range;
-        if (!range.Size.Contains(size))
+        if (!range.Size.Accomodates(size))
         {
             throw new ArgumentException($"is bigger than {nameof(range)}", nameof(size));
         }

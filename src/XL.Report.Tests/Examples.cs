@@ -447,6 +447,9 @@ public sealed class Examples
                 )
             );
 
+            sheet.WriteRow(new BlankRow(), new RowOptions(Height: 24));
+            sheet.WriteRow(new BlankRow(), new RowOptions(Hidden: true));
+
             sheet.Complete();
         }
 

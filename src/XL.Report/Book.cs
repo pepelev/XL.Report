@@ -17,6 +17,7 @@ public abstract class Book : IDisposable
         public abstract string Name { get; set; }
         public abstract void Dispose();
         public abstract T WriteRow<T>(IUnit<T> unit);
+        public abstract T WriteRow<T>(IUnit<T> unit, RowOptions options);
         public abstract void DefineName(string name, Range range, string? comment = null);
         public abstract Hyperlinks Hyperlinks { get; }
         public abstract void AddConditionalFormatting(ConditionalFormatting formatting);

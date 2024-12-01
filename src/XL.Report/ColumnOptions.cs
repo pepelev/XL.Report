@@ -9,6 +9,29 @@ public sealed record ColumnOptions(float? Width = null, StyleId? StyleId = null,
 {
     public static ColumnOptions Default { get; } = new();
 
+    public void Write(Xml xml, int x)
+    {
+        using (xml.WriteStartElement("col"))
+        {
+            xml.WriteAttribute("min", x);
+            xml.WriteAttribute("max", x);
+            if (Width is { } width)
+            {
+                xml.WriteAttribute("width", width, "N6");
+            }
+
+            if (StyleId is { } styleId)
+            {
+                xml.WriteAttribute("style", styleId);
+            }
+
+            if (Hidden)
+            {
+                xml.WriteAttribute("hidden", "true");
+            }
+        }
+    }
+    
     public sealed class Collection : IReadOnlyCollection<(int X, ColumnOptions Options)>
     {
         private readonly ImmutableSortedDictionary<int, ColumnOptions> content;

@@ -25,7 +25,10 @@ public sealed class Tests
         - hyper-links
         - sharedStrings
         - закрепление областей
+        - column widths
         - column styles
+        - row height
+        - row styles
         - merged cells
         - styles
         - contents
@@ -42,8 +45,6 @@ public sealed class Tests
         - formulas.functions and combinations
         - formulas.range-reference
         - conditional-formatting.rest forms
-        - row height
-        - row styles
         - many styles within one cell
         - netstandard2.1 support
         - reorder sheets

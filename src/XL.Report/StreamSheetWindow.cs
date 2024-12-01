@@ -6,7 +6,7 @@ using XL.Report.Styles;
 
 namespace XL.Report;
 
-public sealed class StreamSheetWindow : SheetWindow, IDisposable
+internal sealed class StreamSheetWindow : SheetWindow, IDisposable
 {
     private readonly List<Range> mergedRanges = new();
     private readonly SheetOptions options;
@@ -14,6 +14,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
     private readonly ReductionStage?[] reductionStages = new ReductionStage?[32];
     private readonly Dictionary<int, Row> rows = new();
     private readonly Xml xml;
+    private int maxTouchedY = -1;
     private Range activeRange;
     private (Xml.Block Document, Xml.Block SheetData)? started;
     private bool valid = true; // todo set and use
@@ -37,6 +38,12 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
     public void Dispose()
     {
         xml.Dispose();
+    }
+
+    public override void TouchRow(int y)
+    {
+        var absoluteY = Range.LeftTop.Y + y - 1;
+        maxTouchedY = Math.Max(maxTouchedY, absoluteY);
     }
 
     public override void Place(Content content, StyleId? styleId)
@@ -124,7 +131,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         }
     }
 
-    public void Flush()
+    public void Flush(RowOptions? rowOptions = null)
     {
         if (reductions.Count > 0)
         {
@@ -179,13 +186,12 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
             var sortedRows = buffer[..index];
             sortedRows.Sort(default(ByKey<int, Row>));
 
-            var mostDownY = activeRange.LeftTop.Y;
-
             foreach (var (y, row) in sortedRows)
             {
                 using (xml.WriteStartElement(XlsxStructure.Worksheet.Row))
                 {
                     xml.WriteAttribute("r", y);
+                    rowOptions?.WriteAttributes(xml);
 
                     if (row.CellsCount <= 4)
                     {
@@ -210,11 +216,25 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
                         pool.Return(cellBuffer);
                     }
                 }
-
-                mostDownY = Math.Max(mostDownY, y);
             }
 
-            return mostDownY;
+            int? mostDownWrittenRow = sortedRows.Length == 0
+                ? null
+                : sortedRows[^1].Key;
+
+            if (rowOptions != null && rowOptions != RowOptions.Default)
+            {
+                for (var y = mostDownWrittenRow ?? activeRange.LeftTop.Y; y <= maxTouchedY; y++)
+                {
+                    using (xml.WriteStartElement(XlsxStructure.Worksheet.Row))
+                    {
+                        xml.WriteAttribute("r", y);
+                        rowOptions.WriteAttributes(xml);
+                    }
+                }
+            }
+
+            return Math.Max(mostDownWrittenRow ?? activeRange.LeftTop.Y, maxTouchedY);
         }
 
         void WriteCells(Span<KeyValuePair<int, Cell>> span, Row row, int y)
@@ -275,25 +295,7 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
             {
                 foreach (var (x, column) in options.Columns)
                 {
-                    using (xml.WriteStartElement("col"))
-                    {
-                        xml.WriteAttribute("min", x);
-                        xml.WriteAttribute("max", x);
-                        if (column.Width is { } width)
-                        {
-                            xml.WriteAttribute("width", width, "N6");
-                        }
-
-                        if (column.StyleId is { } styleId)
-                        {
-                            xml.WriteAttribute("style", styleId);
-                        }
-
-                        if (column.Hidden)
-                        {
-                            xml.WriteAttribute("hidden", "true");
-                        }
-                    }
+                    column.Write(xml, x);
                 }
             }
         }

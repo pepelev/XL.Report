@@ -11,8 +11,8 @@ public readonly struct Range
     public static Range EntireSheet => new(
         new Location(Location.MinX, Location.MinY),
         new Size(
-            Location.MaxX - Location.MinX + 1,
-            Location.MaxY - Location.MinY + 1
+            Location.XLength,
+            Location.YLength
         )
     );
 

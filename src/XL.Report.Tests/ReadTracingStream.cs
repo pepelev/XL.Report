@@ -1,14 +1,7 @@
 namespace XL.Report.Tests;
 
-public sealed class ReadTracingStream : Stream
+public sealed class ReadTracingStream(Stream stream) : Stream
 {
-    private readonly Stream stream;
-
-    public ReadTracingStream(Stream stream)
-    {
-        this.stream = stream;
-    }
-
     public override void Close()
     {
         stream.Close();

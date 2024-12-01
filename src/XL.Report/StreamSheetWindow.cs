@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System.Buffers;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Xml;
 using XL.Report.Styles;
 
@@ -10,10 +12,11 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
     private readonly SheetOptions options;
     private readonly Stack<Range> reductions = new();
     private readonly ReductionStage?[] reductionStages = new ReductionStage?[32];
-    private readonly BTreeSlim<int, Row> rows = new();
+    private readonly Dictionary<int, Row> rows = new();
     private readonly Xml xml;
     private Range activeRange;
     private (Xml.Block Document, Xml.Block SheetData)? started;
+    private bool valid = true; // todo set and use
 
     public StreamSheetWindow(Stream stream, SheetOptions options)
     {
@@ -44,19 +47,19 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
             throw new InvalidOperationException();
         }
 
+        if (!valid)
+        {
+            throw new InvalidOperationException();
+        }
+
         var cell = new Cell(content, styleId);
-        var result = rows.Find(range.Top);
-        if (result.Found)
+        ref var row = ref CollectionsMarshal.GetValueRefOrAddDefault(rows, range.Top, out var exists);
+        if (!exists)
         {
-            ref var row = ref result.Result;
-            row.Add(new CellX(range.Left, cell));
+            row = new Row();
         }
-        else
-        {
-            var newRow = new Row(range.Top);
-            newRow.Add(new CellX(range.Left, cell));
-            rows.TryAdd(newRow);
-        }
+
+        row.Place(range.Left, cell);
     }
 
     public override void Merge(Size size, Content content, StyleId? styleId)
@@ -72,38 +75,23 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
             throw new ArgumentException($"is bigger than {nameof(range)}", nameof(size));
         }
 
-        var top = range.Top;
-        var mergeRow = new MergeRow(
-            top,
-            new Interval<int>(range.Left, range.Left + size.Width)
-        );
-        for (var i = 0; i < size.Height; i++)
+        if (!valid)
         {
-            var result = rows.Find(top + i);
-            if (result.Found)
-            {
-                ref var row = ref result.Result;
-                if (!row.CanAdd(mergeRow.Span))
-                {
-                    throw new ArgumentException("overlaps with already placed content", nameof(size));
-                }
-            }
+            throw new InvalidOperationException();
         }
 
+        var top = range.Top;
+        var interval = new Interval<int>(range.Left, range.Left + size.Width - 1);
         for (var i = 0; i < size.Height; i++)
         {
-            var result = rows.Find(top + i);
-            if (result.Found)
+            ref var row = ref CollectionsMarshal.GetValueRefOrAddDefault(rows, top + i, out var exists);
+            if (!exists)
             {
-                ref var row = ref result.Result;
-                row.Add(mergeRow, content, styleId);
+                row = new Row();
             }
-            else
-            {
-                var newRow = new Row(range.Top);
-                newRow.Add(mergeRow, content, styleId);
-                rows.TryAdd(newRow);
-            }
+
+            var isMain = i == 0;
+            row.Merge(isMain, interval, content, styleId);
         }
 
         mergedRanges.Add(new Range(range.LeftTop, size));
@@ -138,28 +126,6 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
 
     public void Flush()
     {
-        int Write()
-        {
-            var mostDownY = activeRange.LeftTop.Y;
-
-            foreach (var row in rows)
-            {
-                using (xml.WriteStartElement(XlsxStructure.Worksheet.Row))
-                {
-                    xml.WriteAttribute("r", row.Y);
-                    foreach (var (x, content) in row)
-                    {
-                        var location = new Location(x, row.Y);
-                        content.Write(xml, location);
-                    }
-                }
-
-                mostDownY = Math.Max(mostDownY, row.Y);
-            }
-
-            return mostDownY;
-        }
-
         if (reductions.Count > 0)
         {
             throw new InvalidOperationException();
@@ -171,6 +137,98 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
 
         activeRange = newActiveRange;
         rows.Clear();
+        return;
+
+        int Write()
+        {
+            if (rows.Count <= 4)
+            {
+                Array4<KeyValuePair<int, Row>> buffer = default;
+                return WriteRows(buffer.Content);
+            }
+
+            if (rows.Count <= 16)
+            {
+                Array16<KeyValuePair<int, Row>> buffer = default;
+                return WriteRows(buffer.Content);
+            }
+
+            if (rows.Count <= 64)
+            {
+                Array64<KeyValuePair<int, Row>> buffer = default;
+                return WriteRows(buffer.Content);
+            }
+            else
+            {
+                var pool = ArrayPool<KeyValuePair<int, Row>>.Shared;
+                var buffer = pool.Rent(rows.Count);
+                var mostDownY = WriteRows(buffer);
+                pool.Return(buffer);
+                return mostDownY;
+            }
+        }
+
+        int WriteRows(Span<KeyValuePair<int, Row>> buffer)
+        {
+            var index = 0;
+            foreach (var pair in rows)
+            {
+                buffer[index++] = pair;
+            }
+
+            var sortedRows = buffer[..index];
+            sortedRows.Sort(default(ByKey<int, Row>));
+
+            var mostDownY = activeRange.LeftTop.Y;
+
+            foreach (var (y, row) in sortedRows)
+            {
+                using (xml.WriteStartElement(XlsxStructure.Worksheet.Row))
+                {
+                    xml.WriteAttribute("r", y);
+
+                    if (row.CellsCount <= 4)
+                    {
+                        Array4<KeyValuePair<int, Cell>> cellBuffer = default;
+                        WriteCells(cellBuffer.Content, row, y);
+                    }
+                    else if (row.CellsCount <= 16)
+                    {
+                        Array16<KeyValuePair<int, Cell>> cellBuffer = default;
+                        WriteCells(cellBuffer.Content, row, y);
+                    }
+                    else if (row.CellsCount <= 64)
+                    {
+                        Array64<KeyValuePair<int, Cell>> cellBuffer = default;
+                        WriteCells(cellBuffer.Content, row, y);
+                    }
+                    else
+                    {
+                        var pool = ArrayPool<KeyValuePair<int, Cell>>.Shared;
+                        var cellBuffer = pool.Rent(rows.Count);
+                        WriteCells(cellBuffer, row, y);
+                        pool.Return(cellBuffer);
+                    }
+                }
+
+                mostDownY = Math.Max(mostDownY, y);
+            }
+
+            return mostDownY;
+        }
+
+        void WriteCells(Span<KeyValuePair<int, Cell>> span, Row row, int y)
+        {
+            row.CopyCellsTo(span);
+            var sortedCells = span[..row.CellsCount];
+            sortedCells.Sort(default(ByKey<int, Cell>));
+
+            foreach (var (x, cell) in sortedCells)
+            {
+                var location = new Location(x, y);
+                cell.Write(xml, location);
+            }
+        }
     }
 
     private (Xml.Block Document, Xml.Block SheetData) WriteStartOnlyFirstTime()
@@ -262,17 +320,8 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         document.Dispose();
     }
 
-    private sealed class ReductionStage : IDisposable
+    private sealed class ReductionStage(StreamSheetWindow window, int index) : IDisposable
     {
-        private readonly int index;
-        private readonly StreamSheetWindow window;
-
-        public ReductionStage(StreamSheetWindow window, int index)
-        {
-            this.window = window;
-            this.index = index;
-        }
-
         public void Dispose()
         {
             if (window.reductions.Count != index + 1)
@@ -284,90 +333,51 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         }
     }
 
-    private readonly struct Row : IKeyed<int>
+    private struct Row
     {
-        public int Y { get; }
-        int IKeyed<int>.Key => Y;
-        private readonly BTreeSlim<int, CellX> cells = new();
-        private readonly BTreeSlim<int, MergeRow> merges = new();
+        private readonly Dictionary<int, Cell> cells = new();
+        private RowUsage usage;
 
-        public Row(int y)
+        public Row()
         {
-            Y = y;
         }
 
-        public void Add(CellX cell)
+        public void Place(int x, Cell cell)
         {
-            if (!CanAdd(new Interval<int>(cell.X, cell.X)))
+            if (!usage.TryMark(new Interval<int>(x, x)))
             {
                 throw new InvalidOperationException();
             }
 
-            cells.TryAdd(cell).ThrowOnConflict();
+            cells[x] = cell;
         }
 
-        public bool CanAdd(Interval<int> span)
+        public void Merge(bool isMain, Interval<int> range, Content content, StyleId? styleId)
         {
-            var mergeBoundIterator = merges.RightLowerBound(span.LeftInclusive);
-            while (mergeBoundIterator.State == IteratorState.InsideTree)
-            {
-                if (mergeBoundIterator.Current.Span.ToRightOf(span))
-                {
-                    break;
-                }
-
-                if (mergeBoundIterator.Current.Span.Intersect(span))
-                {
-                    return false;
-                }
-
-                mergeBoundIterator.MoveNext();
-            }
-
-            var cellBoundIterator = cells.LeftLowerBound(span.LeftInclusive);
-            if (cellBoundIterator.State == IteratorState.InsideTree)
-            {
-                if (cellBoundIterator.Current.X <= span.RightInclusive)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        public void Add(MergeRow merge, Content content, StyleId? styleId)
-        {
-            if (!CanAdd(merge.Span))
+            if (!usage.TryMark(range))
             {
                 throw new InvalidOperationException();
             }
 
-            if (Y == merge.Top)
+            if (isMain)
             {
-                var cellX = new CellX(merge.Span.LeftInclusive, new Cell(content, styleId));
-                cells.TryAdd(cellX).ThrowOnConflict();
+                cells[range.LeftInclusive] = new Cell(content, styleId);
             }
-
-            merges.TryAdd(merge).ThrowOnConflict();
         }
 
-        public BTreeSlim<int, CellX>.Enumerator GetEnumerator() => cells.GetEnumerator();
+        public int CellsCount => cells.Count;
+
+        public void CopyCellsTo(Span<KeyValuePair<int, Cell>> destination)
+        {
+            var index = 0;
+            foreach (var pair in cells)
+            {
+                destination[index++] = pair;
+            }
+        }
     }
 
-    // todo pack left and right to shorts
-    private readonly record struct MergeRow(int Top, Interval<int> Span) : IKeyed<int>
-    {
-        int IKeyed<int>.Key => Span.LeftInclusive;
-    }
-
-    // todo pack compact (style? and int (actually short) can be packed into long)
-    private readonly record struct CellX(int X, Cell Cell) : IKeyed<int>
-    {
-        int IKeyed<int>.Key => X;
-    }
-
-    public readonly record struct Cell(Content Content, StyleId? StyleId)
+    private readonly struct Cell(Content content, StyleId? styleId)
     {
         public void Write(Xml xml, Location location)
         {
@@ -375,12 +385,12 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
             {
                 xml.WriteAttribute(XlsxStructure.Worksheet.Reference, location);
 
-                if (StyleId is { } styleId)
+                if (styleId is { } value)
                 {
-                    xml.WriteAttribute(XlsxStructure.Worksheet.Style, styleId);
+                    xml.WriteAttribute(XlsxStructure.Worksheet.Style, value);
                 }
 
-                Content.Write(xml);
+                content.Write(xml);
             }
         }
     }

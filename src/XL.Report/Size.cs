@@ -2,7 +2,6 @@ using System.Diagnostics.Contracts;
 
 namespace XL.Report;
 
-// todo make int
 public readonly struct Size : IEquatable<Size>
 {
     public override string ToString()
@@ -51,6 +50,7 @@ public readonly struct Size : IEquatable<Size>
         }
     }
 
+    [Pure]
     public long GetArea()
     {
         return (long)Width * Height;

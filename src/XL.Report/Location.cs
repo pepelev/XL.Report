@@ -25,6 +25,9 @@ public readonly struct Location
         'D' - ZeroLetter; // D
     public const int MaxY = 1048576;
 
+    public const int XLength = MaxX - MinX + 1;
+    public const int YLength = MaxY - MinY + 1;
+
     public int X { get; }
     public int Y { get; }
 

@@ -273,13 +273,26 @@ public sealed class StreamSheetWindow : SheetWindow, IDisposable
         {
             using (xml.WriteStartElement("cols"))
             {
-                foreach (var (x, width) in options.Columns)
+                foreach (var (x, column) in options.Columns)
                 {
                     using (xml.WriteStartElement("col"))
                     {
                         xml.WriteAttribute("min", x);
                         xml.WriteAttribute("max", x);
-                        xml.WriteAttribute("width", width, "N6");
+                        if (column.Width is { } width)
+                        {
+                            xml.WriteAttribute("width", width, "N6");
+                        }
+
+                        if (column.StyleId is { } styleId)
+                        {
+                            xml.WriteAttribute("style", styleId);
+                        }
+
+                        if (column.Hidden)
+                        {
+                            xml.WriteAttribute("hidden", "true");
+                        }
                     }
                 }
             }

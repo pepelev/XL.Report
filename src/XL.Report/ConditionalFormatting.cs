@@ -89,8 +89,24 @@ public sealed class ConditionalFormatting
         public static Rule LessThanOrEqual(Expression expression, StyleDiffId styleId) => new(Condition.LessThanOrEqual(expression), styleId);
         public static Rule Equal(Expression expression, StyleDiffId styleId) => new(Condition.Equal(expression), styleId);
         public static Rule NotEqual(Expression expression, StyleDiffId styleId) => new(Condition.NotEqual(expression), styleId);
+        public static Rule Formula(Expression expression, StyleDiffId styleId) => new(Condition.Formula(expression), styleId);
+
+        // todo check all TimePeriods working
+        public static Rule Yesterday(StyleDiffId styleId) => new(Condition.Yesterday, styleId);
+        public static Rule Today(StyleDiffId styleId) => new(Condition.Today, styleId);
+        public static Rule Tomorrow(StyleDiffId styleId) => new(Condition.Tomorrow, styleId);
+
+        public static Rule Last7Days(StyleDiffId styleId) => new(Condition.Last7Days, styleId);
+
+        public static Rule LastWeek(StyleDiffId styleId) => new(Condition.LastWeek, styleId);
+        public static Rule ThisWeek(StyleDiffId styleId) => new(Condition.ThisWeek, styleId);
+        public static Rule NextWeek(StyleDiffId styleId) => new(Condition.NextWeek, styleId);
+
+        public static Rule LastMonth(StyleDiffId styleId) => new(Condition.LastMonth, styleId);
+        public static Rule ThisMonth(StyleDiffId styleId) => new(Condition.ThisMonth, styleId);
+        public static Rule NextMonth(StyleDiffId styleId) => new(Condition.NextMonth, styleId);
     }
-    
+
     public abstract class Condition
     {
         public abstract void WriteAttributes(Xml xml);
@@ -151,7 +167,6 @@ public sealed class ConditionalFormatting
 
         public static Condition Duplicates { get; } = new Parameterless("duplicateValues");
         public static Condition Unique { get; } = new Parameterless("uniqueValues");
-
         public static Condition Between(Expression a, Expression b) => new Binary("between", a, b);
         public static Condition NotBetween(Expression a, Expression b) => new Binary("notBetween", a, b);
         public static Condition IsError { get; } = new Parameterless("containsErrors");
@@ -190,6 +205,25 @@ public sealed class ConditionalFormatting
             "notEqual",
             expression
         );
+
+        public static Condition Formula(Expression expression) => new Unary(
+            "expression",
+            expression
+        );
+
+        public static Condition Yesterday { get; } = new TimePeriod("yesterday");
+        public static Condition Today { get; } = new TimePeriod("today");
+        public static Condition Tomorrow { get; } = new TimePeriod("tomorrow");
+
+        public static Condition Last7Days { get; } = new TimePeriod("last7Days");
+
+        public static Condition LastWeek { get; } = new TimePeriod("lastWeek");
+        public static Condition ThisWeek { get; } = new TimePeriod("thisWeek");
+        public static Condition NextWeek { get; } = new TimePeriod("nextWeek");
+
+        public static Condition LastMonth { get; } = new TimePeriod("lastMonth");
+        public static Condition ThisMonth { get; } = new TimePeriod("thisMonth");
+        public static Condition NextMonth { get; } = new TimePeriod("nextMonth");
 
         public sealed class Parameterless(string type) : Condition
         {
@@ -277,40 +311,17 @@ public sealed class ConditionalFormatting
             AboveAverage
         }
 
-        // public sealed class Contains : Rule
-        // {
-        //     private readonly string text;
-        //
-        //     public Contains(string text)
-        //     {
-        //         this.text = text;
-        //     }
-        //
-        //     private Expression Formula => new Expression.Verbatim(
-        //         // todo A1 is correct?
-        //         // todo escape
-        //         $"NOT(ISERROR(SEARCH(\"{text}\",A1)))"
-        //     );
-        //
-        //     public override void Write(Xml xml, StyleDiffId styleDiffId, int priority)
-        //     {
-        //         using (xml.WriteStartElement("cfRule"))
-        //         {
-        //             xml.WriteAttribute("type", "containsText");
-        //             xml.WriteAttribute("dxfId", styleDiffId);
-        //             xml.WriteAttribute("priority", priority);
-        //             xml.WriteAttribute("operator", "containsText");
-        //
-        //             // todo needed?
-        //             xml.WriteAttribute("text", text);
-        //
-        //             // todo needed?
-        //             using (xml.WriteStartElement("formula"))
-        //             {
-        //                 xml.WriteValue(Formula);
-        //             }
-        //         }
-        //     }
-        // }
+        public sealed class TimePeriod(string period) : Condition
+        {
+            public override void WriteAttributes(Xml xml)
+            {
+                xml.WriteAttribute("type", "timePeriod");
+                xml.WriteAttribute("timePeriod", period);
+            }
+
+            public override void WriteBody(Xml xml)
+            {
+            }
+        }
     }
 }

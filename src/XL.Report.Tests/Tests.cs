@@ -4,6 +4,7 @@ using XL.Report.Styles.Fills;
 
 namespace XL.Report.Tests;
 
+[Explicit]
 public sealed class Tests
 {
     /*
@@ -34,6 +35,7 @@ public sealed class Tests
         - contents
         - conditional-formatting
             - value forms
+            - timePeriod forms
             - several rules
             - several ranges
         - handy way to create cells and merges

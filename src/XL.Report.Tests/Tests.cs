@@ -48,12 +48,15 @@ public sealed class Tests
 
         todo add:
         - sheet (range) name consistency
+        - WriteRow<T>(IUnit<T> unit, RowOptions options); has bug, if row in the middle not printed then row style is not applied
+        - make ConditionalFormatting.Rule abstract class
+        - tests
+        - docs
         - formulas.row and column references
         - formulas.functions and combinations
         - formulas.range-reference
         - conditional-formatting.rest forms
         - many styles within one cell
-        - netstandard2.1 support
         - reorder sheets
      */
 

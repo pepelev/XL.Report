@@ -44,7 +44,7 @@ public sealed class PatternFill : Fill, IEquatable<PatternFill>
             {
                 using (xml.WriteStartElement("fgColor"))
                 {
-                    xml.WriteAttribute("rgb", color.ToRGBHex());
+                    xml.WriteAttribute("rgb", color.ToRgbHex());
                 }
             }
 
@@ -52,7 +52,7 @@ public sealed class PatternFill : Fill, IEquatable<PatternFill>
             {
                 using (xml.WriteStartElement("bgColor"))
                 {
-                    xml.WriteAttribute("rgb", background.ToRGBHex());
+                    xml.WriteAttribute("rgb", background.ToRgbHex());
                 }
             }
         }

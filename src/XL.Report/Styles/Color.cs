@@ -1,3 +1,7 @@
+using System.Diagnostics;
+using System.Globalization;
+using System.Security.Cryptography;
+
 namespace XL.Report.Styles;
 
 public readonly struct Color : IEquatable<Color>
@@ -19,7 +23,35 @@ public readonly struct Color : IEquatable<Color>
     public static bool operator ==(Color left, Color right) => left.Equals(right);
     public static bool operator !=(Color left, Color right) => !left.Equals(right);
 
-    // todo span formattable
-    public string ToRGBHex() => $"{Red:X2}{Green:X2}{Blue:X2}";
-    public override string ToString() => $"#{ToRGBHex()}";
+    public RgbHex ToRgbHex() => new(this);
+    public override string ToString() => $"#{ToRgbHex()}";
+
+    public readonly struct RgbHex(Color source) : ISpanFormattable
+    {
+        private readonly Color source = source;
+
+        public string ToString(string? format, IFormatProvider? formatProvider) => ToString();
+
+        public bool TryFormat(
+            Span<char> destination,
+            out int charsWritten,
+            ReadOnlySpan<char> format,
+            IFormatProvider? provider)
+        {
+            return FormatContext.Start
+                .Write(ref destination, source.Red, "X2", CultureInfo.InvariantCulture)
+                .Write(ref destination, source.Green, "X2", CultureInfo.InvariantCulture)
+                .Write(ref destination, source.Blue, "X2", CultureInfo.InvariantCulture)
+                .Deconstruct(out charsWritten);
+        }
+
+        public override string ToString()
+        {
+            return string.Create(
+                6,
+                this,
+                (span, @this) => @this.TryFormat(span, out _, "", CultureInfo.InvariantCulture)
+            );
+        }
+    }
 }

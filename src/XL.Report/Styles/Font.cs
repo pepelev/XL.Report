@@ -75,8 +75,7 @@ public sealed partial record Font(
             {
                 using (xml.WriteStartElement(Fonts.Color))
                 {
-                    // todo print color allocation free
-                    xml.WriteAttribute(Fonts.ColorRgb, color.ToRGBHex());
+                    xml.WriteAttribute(Fonts.ColorRgb, color.ToRgbHex());
                 }
             }
 

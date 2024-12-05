@@ -70,7 +70,7 @@ public sealed partial record Font
                 {
                     using (xml.WriteStartElement(XlsxStructure.Styles.Fonts.Color))
                     {
-                        xml.WriteAttribute(XlsxStructure.Styles.Fonts.ColorRgb, color.ToRGBHex());
+                        xml.WriteAttribute(XlsxStructure.Styles.Fonts.ColorRgb, color.ToRgbHex());
                     }
                 }
 

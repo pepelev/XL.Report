@@ -39,12 +39,12 @@ public sealed class SolidFill : Fill, IEquatable<SolidFill>
             // for both regular style and style diff
             using (xml.WriteStartElement("fgColor"))
             {
-                xml.WriteAttribute("rgb", Color.ToRGBHex());
+                xml.WriteAttribute("rgb", Color.ToRgbHex());
             }
 
             using (xml.WriteStartElement("bgColor"))
             {
-                xml.WriteAttribute("rgb", Color.ToRGBHex());
+                xml.WriteAttribute("rgb", Color.ToRgbHex());
             }
         }
     }

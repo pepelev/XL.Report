@@ -32,6 +32,10 @@ public sealed class Tests
         - merged cells
         - styles
         - contents
+        - conditional-formatting
+            - value forms
+            - several rules
+            - several ranges
         - handy way to create cells and merges
             - registration of styles inside
             - selection of content type by parameter type
@@ -41,6 +45,7 @@ public sealed class Tests
         - conditional-formatting
 
         todo add:
+        - sheet (range) name consistency
         - formulas.row and column references
         - formulas.functions and combinations
         - formulas.range-reference

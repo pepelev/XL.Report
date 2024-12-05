@@ -1,8 +1,11 @@
 ﻿using System.IO.Compression;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Xml.Linq;
 using JetBrains.Annotations;
 using XL.Report.Styles;
 using XL.Report.Styles.Fills;
+using static XL.Report.ConditionalFormatting;
 using static XL.Report.Number;
 
 namespace XL.Report.Tests;
@@ -23,6 +26,7 @@ public sealed class Examples
     );
 
     private static string Path(string testName) => $"{resultsDirectory}/{testName}.xlsx";
+    private static string ExtractedPath(string testName) => $"{resultsDirectory}/{testName}";
 
     [Test]
     public void Simplest_Book()
@@ -82,14 +86,102 @@ public sealed class Examples
         book.Complete();
     }
 
+    [Pure]
+    private static string CutSheetName(string name) => name.Length > 31
+            ? name[^31..]
+            : name;
+
     [Test]
     public void Conditional_Formattings()
     {
         using var book = new StreamBook(ResultStream(), CompressionLevel.Optimal, false);
         var units = new Units(book);
-        var random = new Random(Seed: 162317036);
-        using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
+
+        (string Name, Condition Condition) Named(
+            Condition condition,
+            [CallerArgumentExpression(nameof(condition))]
+            string expression = ""
+        )
         {
+            return (expression, condition);
+        }
+
+        var a = new Expression.Verbatim("10");
+        var b = new Expression.Verbatim("25");
+        var rules = new[]
+        {
+            Named(Condition.Duplicates),
+            Named(Condition.Unique),
+            Named(Condition.Contains("3")),
+            Named(Condition.NotContains("3")),
+            Named(Condition.StartsWith("1")),
+            Named(Condition.EndsWith("1")),
+            Named(Condition.IsError),
+            Named(Condition.IsNotError),
+            Named(Condition.Between(a, b)),
+            Named(Condition.NotBetween(a, b)),
+            Named(Condition.Equal(b)),
+            Named(Condition.NotEqual(b)),
+            Named(Condition.GreaterThan(b)),
+            Named(Condition.GreaterThanOrEqual(b)),
+            Named(Condition.LessThan(b)),
+            Named(Condition.LessThanOrEqual(b)),
+            Named(new Condition.ExtremeValues(Condition.Target.Highest, 3)),
+            Named(new Condition.ExtremePercentValues(Condition.Target.Lowest, 35)),
+            Named(new Condition.AverageRelatedValues(Condition.AverageRelation.AboveAverage)),
+            Named(new Condition.AverageRelatedValues(Condition.AverageRelation.BelowAverage)),
+            Named(new Condition.AverageRelatedValues(Condition.AverageRelation.BelowOrEqualAverage)),
+            Named(new Condition.AverageRelatedValues(Condition.AverageRelation.AboveOrEqualAverage))
+        };
+
+        var brightTurquoise = new Color(10, 234, 196);
+        var mainStyleId = book.Styles.Register(
+            new Style.Diff(
+                Fill: new SolidFill(brightTurquoise)
+            )
+        );
+        var cerulean = new Color(10, 171, 234);
+        var alternativeStyleId = book.Styles.Register(
+            new Style.Diff(
+                Fill: new SolidFill(cerulean)
+            )
+        );
+        foreach (var (name, condition) in rules)
+        {
+            using var sheet = book.CreateSheet(CutSheetName(name), SheetOptions.Default);
+            FillData(name, sheet);
+            var formatting = new ConditionalFormatting(
+                new[] { Range.Parse("A2:J5"), Range.Parse("A6:F6") },
+                new[] { new Rule(condition, mainStyleId) }
+            );
+            sheet.AddConditionalFormatting(formatting);
+            sheet.Complete();
+        }
+
+        {
+            var name = "Condition.Duplicates -> brightTurquoise; Condition.Between(10, 25) -> cerulean";
+            using var sheet = book.CreateSheet(CutSheetName(name), SheetOptions.Default);
+            FillData(name, sheet);
+            var formatting = new ConditionalFormatting(
+                new[] { Range.Parse("A2:J5"), Range.Parse("A6:F6") },
+                new[]
+                {
+                    new Rule(Condition.Duplicates, mainStyleId),
+                    new Rule(Condition.Between(a, b), alternativeStyleId)
+                }
+            );
+            sheet.AddConditionalFormatting(formatting);
+            sheet.Complete();
+        }
+
+        book.Complete();
+        return;
+
+        void FillData(string name, Book.SheetBuilder sheet)
+        {
+            var random = new Random(Seed: 162317036);
+            var title = units.Cell(name);
+            sheet.WriteRow<Range>(title);
             for (var y = 0; y < 3; y++)
             {
                 var row = new Row(
@@ -108,20 +200,8 @@ public sealed class Examples
                 sheet.WriteRow(row);
             }
 
-            var formatting = new ConditionalFormatting(
-                Range.Parse("A1:J10"),
-                ConditionalFormatting.Rule.Duplicates,
-                book.Styles.Register(
-                    new Style.Diff(
-                        Fill: new SolidFill(new Color(10, 234, 196))
-                    )
-                )
-            );
-            sheet.AddConditionalFormatting(formatting);
-            sheet.Complete();
+            sheet.WriteRow<Range>(units.Cell(new Formula(new Expression.Verbatim("10/0"))));
         }
-
-        book.Complete();
     }
 
     [Test]
@@ -581,6 +661,40 @@ public sealed class Examples
         Console.WriteLine("After entry read");
     }
 
+    [TearDown]
+    public void TearDown()
+    {
+        var extractionDirectory = ExtractedPath(TestName);
+
+        if (Directory.Exists(extractionDirectory))
+        {
+            Directory.Delete(extractionDirectory, recursive: true);
+        }
+
+        using var file = new FileStream(Path(TestName), FileMode.Open);
+        using var archive = new ZipArchive(file, ZipArchiveMode.Read);
+        foreach (var entry in archive.Entries)
+        {
+            var extractedPath = System.IO.Path.Combine(extractionDirectory, entry.FullName);
+            var entryDirectory = System.IO.Path.GetDirectoryName(extractedPath) ?? throw new Exception("No directory");
+            Directory.CreateDirectory(entryDirectory);
+            using var target = new FileStream(extractedPath, FileMode.CreateNew);
+            using var entryContent = entry.Open();
+            if (System.IO.Path.GetExtension(entry.FullName) == ".xml")
+            {
+                using var reader = new StreamReader(entryContent, Encoding.UTF8);
+                var xml = reader.ReadToEnd();
+                var document = XDocument.Parse(xml);
+                var prettified = Encoding.UTF8.GetBytes(document.ToString());
+                target.Write(prettified);
+            }
+            else
+            {
+                entryContent.CopyTo(target);
+            }
+        }
+    }
+    
     private static T[] Array<T>(int count, [InstantHandle] Func<T> factory)
     {
         var result = new T[count];

@@ -324,11 +324,10 @@ internal sealed class StreamSheetWindow : SheetWindow, IDisposable
             }
         }
 
-        var priority = formattings.Count;
+        var priority = 1;
         foreach (var formatting in formattings)
         {
-            formatting.Write(xml, priority);
-            priority--;
+            priority = formatting.Write(xml, priority);
         }
 
         hyperlinks.WriteSheetPart(xml);

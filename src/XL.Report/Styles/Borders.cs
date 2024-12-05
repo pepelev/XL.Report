@@ -78,7 +78,7 @@ public sealed partial class Borders : IEquatable<Borders>
         {
             using (xml.WriteStartElement("color"))
             {
-                xml.WriteAttribute("rgb", color.ToRGBHex());
+                xml.WriteAttribute("rgb", color.ToRgbHex());
             }
         }
     }

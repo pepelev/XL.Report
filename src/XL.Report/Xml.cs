@@ -52,6 +52,11 @@ public sealed class Xml : IDisposable
         Raw.WriteEndElement();
     }
 
+    public void WriteStartAttribute(string name)
+    {
+        Raw.WriteStartAttribute(name);
+    }
+
     public void WriteAttribute(string name, string value)
     {
         Raw.WriteAttributeString(name, value);

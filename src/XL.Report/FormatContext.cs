@@ -46,7 +46,7 @@ internal readonly record struct FormatContext(bool Success, int CharsWritten)
         return Fail;
     }
 
-    public FormatContext Write(ref Span<char> destination, string value)
+    public FormatContext Write(ref Span<char> destination, ReadOnlySpan<char> value)
     {
         if (!Success)
         {

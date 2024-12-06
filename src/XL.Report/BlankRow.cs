@@ -4,7 +4,12 @@ public readonly struct BlankRow : IUnit<Range>
 {
     private readonly int rows;
 
-    public BlankRow(int rows = 1)
+    public BlankRow()
+        : this(1)
+    {
+    }
+
+    public BlankRow(int rows)
     {
         if (rows <= 0)
         {

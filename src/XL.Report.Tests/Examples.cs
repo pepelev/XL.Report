@@ -34,6 +34,33 @@ public sealed class Examples
     }
 
     [Test]
+    public async Task Blank_Line_Within_RowOptions()
+    {
+        using var output = Output.Prepare(TestName);
+        using (var book = new StreamBook(output.Stream, CompressionLevel.Optimal, false))
+        {
+            var units = new Units(book);
+            using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
+            {
+                sheet.WriteRow(
+                    new Column(
+                        units.Cell(1),
+                        new BlankRow(),
+                        units.Cell(3)
+                    ),
+                    new RowOptions(Height: 24)
+                );
+
+                sheet.Complete();
+            }
+
+            book.Complete();
+        }
+
+        await output.VerifyAsync();
+    }
+
+    [Test]
     public async Task Data_Types()
     {
         using var output = Output.Prepare(TestName);

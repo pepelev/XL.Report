@@ -6,4 +6,10 @@ public sealed record SheetOptions(FreezeOptions Freeze, ColumnOptions.Collection
         FreezeOptions.None,
         ColumnOptions.Collection.Default
     );
+
+    public void Write(Xml xml)
+    {
+        Freeze.WriteAsSingleSheetView(xml);
+        Columns.Write(xml);
+    }
 }

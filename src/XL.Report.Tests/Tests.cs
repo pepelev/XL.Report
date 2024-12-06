@@ -41,6 +41,8 @@ public sealed class Tests
         - handy way to create cells and merges
             - registration of styles inside
             - selection of content type by parameter type
+        - tests
+            - verify infrastructure
 
         partially added:
         - formulas
@@ -48,7 +50,6 @@ public sealed class Tests
 
         todo add:
         - sheet (range) name consistency
-        - WriteRow<T>(IUnit<T> unit, RowOptions options); has bug, if row in the middle not printed then row style is not applied
         - make ConditionalFormatting.Rule abstract class
         - tests
         - docs

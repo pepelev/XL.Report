@@ -58,6 +58,20 @@ public sealed record ColumnOptions(float? Width = null, StyleId? StyleId = null,
         public static Collection Default { get; } = new(ImmutableSortedDictionary<int, ColumnOptions>.Empty);
         // ReSharper restore MemberHidesStaticFromOuterClass
 
+        public void Write(Xml xml)
+        {
+            if (Count > 0)
+            {
+                using (xml.WriteStartElement("cols"))
+                {
+                    foreach (var (x, column) in content)
+                    {
+                        column.Write(xml, x);
+                    }
+                }
+            }
+        }
+
         public IEnumerator<(int X, ColumnOptions Options)> GetEnumerator() =>
             content
                 .Select(pair => (pair.Key, pair.Value))

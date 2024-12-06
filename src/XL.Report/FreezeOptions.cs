@@ -23,6 +23,38 @@ public sealed class FreezeOptions : IEquatable<FreezeOptions>
     public int FreezeByX { get; }
     public int FreezeByY { get; }
 
+    public void WriteAsSingleSheetView(Xml xml)
+    {
+        if (this == None)
+        {
+            return;
+        }
+
+        using (xml.WriteStartElement("sheetViews"))
+        {
+            using (xml.WriteStartElement("sheetView"))
+            {
+                xml.WriteAttribute("workbookViewId", "0");
+                using (xml.WriteStartElement("pane"))
+                {
+                    if (FreezeByX > 0)
+                    {
+                        xml.WriteAttribute("xSplit", FreezeByX);
+                    }
+
+                    if (FreezeByY > 0)
+                    {
+                        xml.WriteAttribute("ySplit", FreezeByY);
+                    }
+
+                    var topLeftCell = new Location(FreezeByX + 1, FreezeByY + 1);
+                    xml.WriteAttribute("topLeftCell", topLeftCell);
+                    xml.WriteAttribute("state", "frozen");
+                }
+            }
+        }
+    }
+
     public bool Equals(FreezeOptions? other)
     {
         if (ReferenceEquals(null, other)) return false;

@@ -331,7 +331,7 @@ public sealed class StreamBook : Book
         public override T WriteRow<T>(IUnit<T> unit)
         {
             var result = unit.Write(window);
-            window.Flush();
+            window.Flush(RowOptions.Default);
             return result;
         }
 

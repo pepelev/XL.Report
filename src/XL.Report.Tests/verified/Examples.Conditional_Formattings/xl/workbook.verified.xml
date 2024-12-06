@@ -1,0 +1,27 @@
+﻿<workbook xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheets>
+    <sheet name="Condition.Duplicates" sheetId="1" r:id="rId1" />
+    <sheet name="Condition.Unique" sheetId="2" r:id="rId2" />
+    <sheet name="Condition.Contains(&quot;3&quot;)" sheetId="3" r:id="rId3" />
+    <sheet name="Condition.NotContains(&quot;3&quot;)" sheetId="4" r:id="rId4" />
+    <sheet name="Condition.StartsWith(&quot;1&quot;)" sheetId="5" r:id="rId5" />
+    <sheet name="Condition.EndsWith(&quot;1&quot;)" sheetId="6" r:id="rId6" />
+    <sheet name="Condition.IsError" sheetId="7" r:id="rId7" />
+    <sheet name="Condition.IsNotError" sheetId="8" r:id="rId8" />
+    <sheet name="Condition.Between(a, b)" sheetId="9" r:id="rId9" />
+    <sheet name="Condition.NotBetween(a, b)" sheetId="10" r:id="rId10" />
+    <sheet name="Condition.Equal(b)" sheetId="11" r:id="rId11" />
+    <sheet name="Condition.NotEqual(b)" sheetId="12" r:id="rId12" />
+    <sheet name="Condition.GreaterThan(b)" sheetId="13" r:id="rId13" />
+    <sheet name="Condition.GreaterThanOrEqual(b)" sheetId="14" r:id="rId14" />
+    <sheet name="Condition.LessThan(b)" sheetId="15" r:id="rId15" />
+    <sheet name="Condition.LessThanOrEqual(b)" sheetId="16" r:id="rId16" />
+    <sheet name="es(Condition.Target.Highest, 3)" sheetId="17" r:id="rId17" />
+    <sheet name="es(Condition.Target.Lowest, 35)" sheetId="18" r:id="rId18" />
+    <sheet name="n.AverageRelation.AboveAverage)" sheetId="19" r:id="rId19" />
+    <sheet name="n.AverageRelation.BelowAverage)" sheetId="20" r:id="rId20" />
+    <sheet name="geRelation.BelowOrEqualAverage)" sheetId="21" r:id="rId21" />
+    <sheet name="geRelation.AboveOrEqualAverage)" sheetId="22" r:id="rId22" />
+    <sheet name="ion.Between(10, 25) -&gt; cerulean" sheetId="23" r:id="rId23" />
+  </sheets>
+</workbook>

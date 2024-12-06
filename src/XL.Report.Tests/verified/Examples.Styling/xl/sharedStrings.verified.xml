@@ -1,0 +1,200 @@
+﻿<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <si>
+    <t>Fonts:</t>
+  </si>
+  <si>
+    <t>Default</t>
+  </si>
+  <si>
+    <t>Arial</t>
+  </si>
+  <si>
+    <t>Arial 14</t>
+  </si>
+  <si>
+    <t>Arial red</t>
+  </si>
+  <si>
+    <t>Bold</t>
+  </si>
+  <si>
+    <t>Italic</t>
+  </si>
+  <si>
+    <t>Strikethrough</t>
+  </si>
+  <si>
+    <t>Superscript</t>
+  </si>
+  <si>
+    <t>Subscript</t>
+  </si>
+  <si>
+    <t>Underline single</t>
+  </si>
+  <si>
+    <t>Underline double</t>
+  </si>
+  <si>
+    <t>Underline single by cell</t>
+  </si>
+  <si>
+    <t>Underline double by cell</t>
+  </si>
+  <si>
+    <t>Composite</t>
+  </si>
+  <si>
+    <t>Alignments:</t>
+  </si>
+  <si>
+    <t>Alignments.Vertical</t>
+  </si>
+  <si>
+    <t>By content, string</t>
+  </si>
+  <si>
+    <t>By content, number</t>
+  </si>
+  <si>
+    <t>Left, no indent</t>
+  </si>
+  <si>
+    <t>Left, indent</t>
+  </si>
+  <si>
+    <t>Center</t>
+  </si>
+  <si>
+    <t>Center continuous</t>
+  </si>
+  <si>
+    <t>Right, no indent</t>
+  </si>
+  <si>
+    <t>Right, indent</t>
+  </si>
+  <si>
+    <t>Fill</t>
+  </si>
+  <si>
+    <t>Justify</t>
+  </si>
+  <si>
+    <t>Distributed, no indent</t>
+  </si>
+  <si>
+    <t>Distributed, indent</t>
+  </si>
+  <si>
+    <t>Distributed, JustifyLastLine</t>
+  </si>
+  <si>
+    <t>Bottom</t>
+  </si>
+  <si>
+    <t>Top</t>
+  </si>
+  <si>
+    <t>Distributed</t>
+  </si>
+  <si>
+    <t>Fills:</t>
+  </si>
+  <si>
+    <t>Solid</t>
+  </si>
+  <si>
+    <t>Pattern MediumGray</t>
+  </si>
+  <si>
+    <t>Pattern DarkGray</t>
+  </si>
+  <si>
+    <t>Pattern LightGray</t>
+  </si>
+  <si>
+    <t>Pattern DarkHorizontal</t>
+  </si>
+  <si>
+    <t>Pattern DarkVertical</t>
+  </si>
+  <si>
+    <t>Pattern DarkDown</t>
+  </si>
+  <si>
+    <t>Pattern DarkUp</t>
+  </si>
+  <si>
+    <t>Pattern DarkGrid</t>
+  </si>
+  <si>
+    <t>Pattern DarkTrellis</t>
+  </si>
+  <si>
+    <t>Pattern LightHorizontal</t>
+  </si>
+  <si>
+    <t>Pattern LightVertical</t>
+  </si>
+  <si>
+    <t>Pattern LightDown</t>
+  </si>
+  <si>
+    <t>Pattern LightUp</t>
+  </si>
+  <si>
+    <t>Pattern LightGrid</t>
+  </si>
+  <si>
+    <t>Pattern LightTrellis</t>
+  </si>
+  <si>
+    <t>Pattern Gray125</t>
+  </si>
+  <si>
+    <t>Pattern Gray0625</t>
+  </si>
+  <si>
+    <t></t>
+  </si>
+  <si>
+    <t>Borders:</t>
+  </si>
+  <si>
+    <t>Left Top</t>
+  </si>
+  <si>
+    <t>Diagonal</t>
+  </si>
+  <si>
+    <t>Thick</t>
+  </si>
+  <si>
+    <t>MediumDashDotDot</t>
+  </si>
+  <si>
+    <t>Dashed</t>
+  </si>
+  <si>
+    <t>Hair</t>
+  </si>
+  <si>
+    <t>Dotted</t>
+  </si>
+  <si>
+    <t>DashDotDot</t>
+  </si>
+  <si>
+    <t>DashDot</t>
+  </si>
+  <si>
+    <t>Thin</t>
+  </si>
+  <si>
+    <t>SlantDashDot</t>
+  </si>
+  <si>
+    <t>MediumDashDot</t>
+  </si>
+</sst>

@@ -1,0 +1,20 @@
+﻿<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <si>
+    <t>Without style</t>
+  </si>
+  <si>
+    <t>Default</t>
+  </si>
+  <si>
+    <t>Times New Roman</t>
+  </si>
+  <si>
+    <t>Big times</t>
+  </si>
+  <si>
+    <t>Orange</t>
+  </si>
+  <si>
+    <t>Green</t>
+  </si>
+</sst>

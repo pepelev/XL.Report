@@ -1,0 +1,17 @@
+﻿<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <si>
+    <t>example.com</t>
+  </si>
+  <si>
+    <t>mail</t>
+  </si>
+  <si>
+    <t>file</t>
+  </si>
+  <si>
+    <t>range</t>
+  </si>
+  <si>
+    <t>defined name</t>
+  </si>
+</sst>

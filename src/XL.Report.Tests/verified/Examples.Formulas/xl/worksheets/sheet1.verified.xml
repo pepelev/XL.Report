@@ -1,0 +1,15 @@
+﻿<worksheet xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetData>
+    <row r="1">
+      <c r="A1">
+        <v>42</v>
+      </c>
+      <c r="B1">
+        <v>24</v>
+      </c>
+      <c r="C1" t="str">
+        <f>A1+B1</f>
+      </c>
+    </row>
+  </sheetData>
+</worksheet>

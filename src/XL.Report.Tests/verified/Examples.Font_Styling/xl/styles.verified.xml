@@ -1,0 +1,56 @@
+﻿<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <numFmts>
+    <numFmt numFmtId="256" formatCode="@" />
+  </numFmts>
+  <fonts>
+    <font>
+      <sz val="11.000" />
+      <name val="Calibri" />
+    </font>
+    <font>
+      <sz val="11.000" />
+      <name val="Times New Roman" />
+    </font>
+    <font>
+      <sz val="20.000" />
+      <name val="Times New Roman" />
+    </font>
+    <font>
+      <sz val="11.000" />
+      <color rgb="FF640F" />
+      <name val="Calibri" />
+    </font>
+    <font>
+      <sz val="11.000" />
+      <color rgb="0FC80F" />
+      <name val="Calibri" />
+    </font>
+  </fonts>
+  <fills>
+    <fill>
+      <patternFill patternType="none" />
+    </fill>
+    <fill>
+      <patternFill patternType="gray125" />
+    </fill>
+  </fills>
+  <borders>
+    <border>
+      <left />
+      <right />
+      <top />
+      <bottom />
+      <diagonal />
+    </border>
+  </borders>
+  <cellStyleXfs count="1">
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="0" />
+  </cellStyleXfs>
+  <cellXfs>
+    <xf xfId="0" numFmtId="256" fontId="0" fillId="0" borderId="0" applyNumberFormat="1" />
+    <xf xfId="0" numFmtId="256" fontId="1" fillId="0" borderId="0" applyNumberFormat="1" applyFont="1" />
+    <xf xfId="0" numFmtId="256" fontId="2" fillId="0" borderId="0" applyNumberFormat="1" applyFont="1" />
+    <xf xfId="0" numFmtId="256" fontId="3" fillId="0" borderId="0" applyNumberFormat="1" applyFont="1" />
+    <xf xfId="0" numFmtId="256" fontId="4" fillId="0" borderId="0" applyNumberFormat="1" applyFont="1" />
+  </cellXfs>
+</styleSheet>

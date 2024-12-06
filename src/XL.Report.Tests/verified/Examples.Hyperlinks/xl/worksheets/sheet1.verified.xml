@@ -1,0 +1,28 @@
+﻿<worksheet xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetData>
+    <row r="1">
+      <c r="A1" t="s">
+        <v>0</v>
+      </c>
+      <c r="B1" t="s">
+        <v>1</v>
+      </c>
+      <c r="C1" t="s">
+        <v>2</v>
+      </c>
+      <c r="D1" t="s">
+        <v>3</v>
+      </c>
+      <c r="E1" t="s">
+        <v>4</v>
+      </c>
+    </row>
+  </sheetData>
+  <hyperlinks>
+    <hyperlink ref="D1:D1" location="XL.Report.Tests.Examples.Hyperlinks!D2:D5" tooltip="range" />
+    <hyperlink ref="E1:E1" location="area" tooltip="defined-name" />
+    <hyperlink ref="A1:A1" r:id="rId1" tooltip="https" />
+    <hyperlink ref="B1:B1" r:id="rId2" tooltip="mail" />
+    <hyperlink ref="C1:C1" r:id="rId3" tooltip="new-file" />
+  </hyperlinks>
+</worksheet>

@@ -1,0 +1,8 @@
+﻿<workbook xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheets>
+    <sheet name="XL.Report.Tests.Examples.Hyperlinks" sheetId="1" r:id="rId1" />
+  </sheets>
+  <definedNames>
+    <definedName name="area">XL.Report.Tests.Examples.Hyperlinks!E2:E5</definedName>
+  </definedNames>
+</workbook>

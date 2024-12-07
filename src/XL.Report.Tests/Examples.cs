@@ -181,7 +181,7 @@ public sealed class Examples
                 FillData(name, sheet);
                 var formatting = new ConditionalFormatting(
                     new[] { Range.Parse("A2:J5"), Range.Parse("A6:F6") },
-                    new[] { new Rule(condition, mainStyleId) }
+                    new[] { new ValueRule(condition, mainStyleId) }
                 );
                 sheet.AddConditionalFormatting(formatting);
                 sheet.Complete();
@@ -195,8 +195,8 @@ public sealed class Examples
                     new[] { Range.Parse("A2:J5"), Range.Parse("A6:F6") },
                     new[]
                     {
-                        new Rule(Condition.Duplicates, mainStyleId),
-                        new Rule(Condition.Between(a, b), alternativeStyleId)
+                        new ValueRule(Condition.Duplicates, mainStyleId),
+                        new ValueRule(Condition.Between(a, b), alternativeStyleId)
                     }
                 );
                 sheet.AddConditionalFormatting(formatting);

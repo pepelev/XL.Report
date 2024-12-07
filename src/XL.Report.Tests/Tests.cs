@@ -43,6 +43,7 @@ public sealed class Tests
             - selection of content type by parameter type
         - tests
             - verify infrastructure
+        - make ConditionalFormatting.Rule abstract class
 
         partially added:
         - formulas
@@ -50,7 +51,6 @@ public sealed class Tests
 
         todo add:
         - sheet (range) name consistency
-        - make ConditionalFormatting.Rule abstract class
         - tests
         - docs
         - formulas.row and column references

@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace XL.Report;
+namespace XL.Report.Auxiliary;
 
 internal readonly record struct FormatContext(bool Success, int CharsWritten)
 {

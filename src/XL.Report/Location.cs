@@ -1,4 +1,6 @@
-﻿namespace XL.Report;
+﻿using XL.Report.Auxiliary;
+
+namespace XL.Report;
 
 using System;
 using System.Globalization;

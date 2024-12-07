@@ -1,4 +1,6 @@
-﻿namespace XL.Report.Styles.Fills;
+﻿using XL.Report.Auxiliary;
+
+namespace XL.Report.Styles.Fills;
 
 public sealed class Pattern : IEquatable<Pattern>, ISpanFormattable
 {

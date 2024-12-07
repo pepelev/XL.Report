@@ -1,3 +1,5 @@
+using XL.Report.Auxiliary;
+
 namespace XL.Report;
 
 public readonly record struct SheetRelated<T>(string SheetName, T Value);

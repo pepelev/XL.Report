@@ -118,15 +118,6 @@ internal struct RowUsage
 
         private Array128<byte> map;
 
-        public bool IsMerged(int offset)
-        {
-            var bytes = map.Content;
-            var byteOffset = offset >>> 3;
-            var bitOffset = offset & 7;
-            var testMask = 1 << bitOffset;
-            return (bytes[byteOffset] & testMask) != 0;
-        }
-
         public bool TryMark(Interval<int> range)
         {
             var firstByte = range.LeftInclusive >>> 3;

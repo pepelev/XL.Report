@@ -1,4 +1,5 @@
 using System.Globalization;
+using XL.Report.Auxiliary;
 
 namespace XL.Report.Styles;
 

@@ -51,7 +51,7 @@ public sealed class Tests
 
         todo add:
         - todos
-        - Rule.(Contains, NotContains, StartsWith, EndsWith, IsError, NotIsError) is not working 
+        - Rule.(Contains, NotContains, StartsWith, EndsWith, IsError, NotIsError) is not working in excel
         - sheet (range) name consistency
         - tests
         - docs

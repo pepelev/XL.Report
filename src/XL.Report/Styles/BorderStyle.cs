@@ -1,4 +1,6 @@
-﻿namespace XL.Report.Styles;
+﻿using XL.Report.Auxiliary;
+
+namespace XL.Report.Styles;
 
 public sealed class BorderStyle : IEquatable<BorderStyle>, ISpanFormattable
 {

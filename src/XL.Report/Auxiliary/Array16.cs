@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 namespace XL.Report.Auxiliary;
 
 [InlineArray(16)]
-internal struct Array16<T> : IArray<T>
+internal struct Array16<T>
 {
     private T value0;
     public Span<T> Content => MemoryMarshal.CreateSpan(ref value0, 16);

@@ -1,3 +1,5 @@
+using XL.Report.Auxiliary;
+
 namespace XL.Report;
 
 // 2 ^ 11

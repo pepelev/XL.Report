@@ -1,4 +1,4 @@
-namespace XL.Report;
+namespace XL.Report.Auxiliary;
 
 internal readonly struct ByKey<TKey, TValue> : IComparer<KeyValuePair<TKey, TValue>>
     where TKey : IComparable<TKey>

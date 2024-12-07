@@ -25,7 +25,7 @@ public sealed class Tests
         - defined-names
         - hyper-links
         - sharedStrings
-        - закрепление областей
+        - row/column freezing
         - column widths
         - column styles
         - row height
@@ -50,6 +50,8 @@ public sealed class Tests
         - conditional-formatting
 
         todo add:
+        - todos
+        - Rule.(Contains, NotContains, StartsWith, EndsWith, IsError, NotIsError) is not working 
         - sheet (range) name consistency
         - tests
         - docs

@@ -2,8 +2,8 @@
 
 public abstract class Hyperlinks
 {
-    public abstract void Add(Range range, string url, string? tooltip = null);
-    public abstract void AddToDefinedName(Range range, string name, string? tooltip = null);
-    public abstract void AddToRange(Range range, Range target, string? tooltip = null);
-    public abstract void AddToRange(Range range, SheetRelated<Range> target, string? tooltip = null);
+    public abstract void Add(ValidRange range, string url, string? tooltip = null);
+    public abstract void AddToDefinedName(ValidRange range, string name, string? tooltip = null);
+    public abstract void AddToRange(ValidRange range, ValidRange target, string? tooltip = null);
+    public abstract void AddToRange(ValidRange range, SheetRelated<ValidRange> target, string? tooltip = null);
 }

@@ -74,13 +74,13 @@ internal sealed partial class StreamSheetWindow : SheetWindow, IDisposable
     {
         if (!size.HasArea)
         {
-            throw new ArgumentException($"must {nameof(size.HasArea)}", nameof(size));
+            throw new ArgumentException($"not {nameof(size.HasArea)}", nameof(size));
         }
 
         var range = Range;
         if (!range.Size.Contains(size))
         {
-            throw new ArgumentException($"is bigger than {nameof(range)}", nameof(size));
+            throw new ArgumentException($"is bigger than {nameof(Range)}", nameof(size));
         }
 
         if (!valid)

@@ -18,27 +18,28 @@ public sealed class XmlHyperlinks : Hyperlinks
     }
 
     // todo check range not overlaps
-    public override void Add(Range range, string url, string? tooltip = null)
+    public override void Add(ValidRange range, string url, string? tooltip = null)
     {
         var hyperlink = new Hyperlink<string>(range, url, tooltip);
         urlHyperlinks.Add(hyperlink);
     }
 
-    public override void AddToDefinedName(Range range, string name, string? tooltip = null)
+    public override void AddToDefinedName(ValidRange range, string name, string? tooltip = null)
     {
         var hyperlink = new Hyperlink<string>(range, name, tooltip);
         definedNameHyperlinks.Add(hyperlink);
     }
 
-    public override void AddToRange(Range range, Range target, string? tooltip = null)
+    public override void AddToRange(ValidRange range, ValidRange target, string? tooltip = null)
     {
         var hyperlink = new Hyperlink<Range>(range, target, tooltip);
         thisSheetRangeHyperlinks.Add(hyperlink);
     }
 
-    public override void AddToRange(Range range, SheetRelated<Range> target, string? tooltip = null)
+    public override void AddToRange(ValidRange range, SheetRelated<ValidRange> target, string? tooltip = null)
     {
-        var hyperlink = new Hyperlink<SheetRelated<Range>>(range, target, tooltip);
+        var simplifiedTarget = new SheetRelated<Range>(target.SheetName, target.Value);
+        var hyperlink = new Hyperlink<SheetRelated<Range>>(range, simplifiedTarget, tooltip);
         rangeHyperlinks.Add(hyperlink);
     }
 

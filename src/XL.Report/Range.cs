@@ -3,11 +3,10 @@ using XL.Report.Auxiliary;
 
 namespace XL.Report;
 
-public readonly struct Range
-    : IEquatable<Range>, ISpanFormattable
-#if NET7_0_OR_GREATER
-    , IParsable<Range>
-#endif
+public readonly struct Range :
+    IEquatable<Range>,
+    ISpanFormattable,
+    IParsable<Range>
 {
     public static Range EntireSheet => new(
         new Location(Location.MinX, Location.MinY),
@@ -38,7 +37,7 @@ public readonly struct Range
         return new Range(leftTop, size);
     }
 
-    public bool IsDegenerate => Size.IsDegenerate;
+    public bool IsDegenerate => !Size.HasArea;
 
     public bool Equals(Range other)
     {
@@ -225,4 +224,7 @@ public readonly struct Range
         context.Write(RightBottom);
         return context.Finish(out charsWritten);
     }
+
+    public bool IsValid => Size.HasArea && EntireSheet.Contains(this);
+    public ValidRange EnsureValid() => new(this);
 }

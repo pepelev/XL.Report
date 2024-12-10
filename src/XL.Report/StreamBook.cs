@@ -342,7 +342,7 @@ public sealed class StreamBook : Book
             return result;
         }
 
-        public override void DefineName(string name, Range range, string? comment = null)
+        public override void DefineName(string name, ValidRange range, string? comment = null)
         {
             book.DefineName(this, name, range, comment);
         }

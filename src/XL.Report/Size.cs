@@ -2,12 +2,9 @@ using System.Diagnostics.Contracts;
 
 namespace XL.Report;
 
-public readonly struct Size : IEquatable<Size>
+public readonly struct Size(int width, int height) : IEquatable<Size>
 {
-    public override string ToString()
-    {
-        return $"{Width}:{Height}";
-    }
+    public override string ToString() => $"{Width}:{Height}";
 
     public static Size Cell => new(1, 1);
     public static Size Empty => new(0, 0);
@@ -17,14 +14,8 @@ public readonly struct Size : IEquatable<Size>
 
     public bool IsCell => this == Cell;
 
-    public Size(int width, int height)
-    {
-        Width = width;
-        Height = height;
-    }
-
-    public int Width { get; }
-    public int Height { get; }
+    public int Width => width;
+    public int Height => height;
 
     public bool IsDegenerate => Width < 0 || Height < 0;
     public bool HasArea => Width > 0 && Height > 0;

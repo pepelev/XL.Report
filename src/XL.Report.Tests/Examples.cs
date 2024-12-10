@@ -735,13 +735,12 @@ public sealed class Examples
                     units.Cell("defined name")
                 );
                 sheet.WriteRow(row);
-                sheet.DefineName("area", Range.Parse("E2:E5"));
-                sheet.Hyperlinks.Add(Range.Parse("A1:A1"), "https://example.com", tooltip: "https");
-                sheet.Hyperlinks.Add(Range.Parse("B1:B1"), Hyperlink.Mailto("who@example.com", "Hello"),
-                    tooltip: "mail");
-                sheet.Hyperlinks.Add(Range.Parse("C1:C1"), "new-file.xlsx", tooltip: "new-file");
-                sheet.Hyperlinks.AddToRange(Range.Parse("D1:D1"), target: Range.Parse("D2:D5"), tooltip: "range");
-                sheet.Hyperlinks.AddToDefinedName(Range.Parse("E1:E1"), "area", tooltip: "defined-name");
+                sheet.DefineName("area", Range.Parse("E2:E5").EnsureValid());
+                sheet.Hyperlinks.Add(Range.Parse("A1:A1").EnsureValid(), "https://example.com", tooltip: "https");
+                sheet.Hyperlinks.Add(Range.Parse("B1:B1").EnsureValid(), Hyperlink.Mailto("who@example.com", "Hello"), tooltip: "mail");
+                sheet.Hyperlinks.Add(Range.Parse("C1:C1").EnsureValid(), "new-file.xlsx", tooltip: "new-file");
+                sheet.Hyperlinks.AddToRange(Range.Parse("D1:D1").EnsureValid(), target: Range.Parse("D2:D5").EnsureValid(), tooltip: "range");
+                sheet.Hyperlinks.AddToDefinedName(Range.Parse("E1:E1").EnsureValid(), "area", tooltip: "defined-name");
                 sheet.Complete();
             }
 

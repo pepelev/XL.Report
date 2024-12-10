@@ -52,7 +52,9 @@ public sealed class Pattern : IEquatable<Pattern>, ISpanFormattable
         ReadOnlySpan<char> format,
         IFormatProvider? provider)
     {
-        return FormatContext.Start.Write(ref destination, Value).Deconstruct(out charsWritten);
+        var context = new FormatContext(destination);
+        context.Write(Value);
+        return context.Finish(out charsWritten);
     }
 
     public override string ToString() => ToString(null, null);

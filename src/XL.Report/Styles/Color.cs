@@ -37,11 +37,11 @@ public readonly struct Color : IEquatable<Color>
             ReadOnlySpan<char> format,
             IFormatProvider? provider)
         {
-            return FormatContext.Start
-                .Write(ref destination, source.Red, "X2", CultureInfo.InvariantCulture)
-                .Write(ref destination, source.Green, "X2", CultureInfo.InvariantCulture)
-                .Write(ref destination, source.Blue, "X2", CultureInfo.InvariantCulture)
-                .Deconstruct(out charsWritten);
+            var context = new FormatContext(destination);
+            context.Write(source.Red, "X2", CultureInfo.InvariantCulture);
+            context.Write(source.Green, "X2", CultureInfo.InvariantCulture);
+            context.Write(source.Blue, "X2", CultureInfo.InvariantCulture);
+            return context.Finish(out charsWritten);
         }
 
         public override string ToString()

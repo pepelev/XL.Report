@@ -6,20 +6,13 @@ public readonly record struct SheetRelated<T>(string SheetName, T Value);
 
 public static class SheetRelated
 {
-    public readonly struct Formattable<T> : ISpanFormattable
+    public readonly struct Formattable<T>(SheetRelated<T> content) : ISpanFormattable
         where T : ISpanFormattable
     {
-        private readonly SheetRelated<T> content;
-
-        public Formattable(SheetRelated<T> content)
-        {
-            this.content = content;
-        }
-
         public override string ToString() => ToString(null, null);
 
         public string ToString(string? format, IFormatProvider? formatProvider) =>
-            $"{content.SheetName}!{content.Value.ToString(format, formatProvider)}";
+            FormatContext.ToString(this, format, formatProvider);
 
         public bool TryFormat(
             Span<char> destination,
@@ -27,11 +20,11 @@ public static class SheetRelated
             ReadOnlySpan<char> format,
             IFormatProvider? provider)
         {
-            return FormatContext.Start
-                .Write(ref destination, content.SheetName)
-                .Write(ref destination, "!")
-                .Write(ref destination, content.Value, format, provider)
-                .Deconstruct(out charsWritten);
+            var context = new FormatContext(destination);
+            context.Write(content.SheetName);
+            context.Write("!");
+            context.Write(content.Value, format, provider);
+            return context.Finish(out charsWritten);
         }
 
         public static implicit operator Formattable<T>(SheetRelated<T> value) => value.ToFormattable();

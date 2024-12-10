@@ -45,7 +45,9 @@ public sealed class BorderStyle : IEquatable<BorderStyle>, ISpanFormattable
         ReadOnlySpan<char> format,
         IFormatProvider? provider)
     {
-        return FormatContext.Start.Write(ref destination, Value).Deconstruct(out charsWritten);
+        var context = new FormatContext(destination);
+        context.Write(Value);
+        return context.Finish(out charsWritten);
     }
 
     public override bool Equals(object? obj) => ReferenceEquals(this, obj) || obj is BorderStyle other && Equals(other);

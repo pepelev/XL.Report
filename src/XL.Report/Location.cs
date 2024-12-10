@@ -135,17 +135,19 @@ public readonly struct Location
     {
         if (IsCorrect())
         {
-            return FormatContext.Start
-                .Write(ref destination, (uint)X, TryFormatCorrectX)
-                .Write(ref destination, Y, ReadOnlySpan<char>.Empty, CultureInfo.InvariantCulture)
-                .Deconstruct(out charsWritten);
+            var context = new FormatContext(destination);
+            context.Write((uint)X, TryFormatCorrectX);
+            context.Write(Y, ReadOnlySpan<char>.Empty, CultureInfo.InvariantCulture);
+            return context.Finish(out charsWritten);
         }
-
-        return FormatContext.Start
-            .Write(ref destination, X, ReadOnlySpan<char>.Empty, CultureInfo.InvariantCulture)
-            .Write(ref destination, ", ")
-            .Write(ref destination, Y, ReadOnlySpan<char>.Empty, CultureInfo.InvariantCulture)
-            .Deconstruct(out charsWritten);
+        else
+        {
+            var context = new FormatContext(destination);
+            context.Write(X, ReadOnlySpan<char>.Empty, CultureInfo.InvariantCulture);
+            context.Write(", ");
+            context.Write(Y, ReadOnlySpan<char>.Empty, CultureInfo.InvariantCulture);
+            return context.Finish(out charsWritten);
+        }
     }
 
     private string PrintCorrectValue() => PrintX() + PrintY();
@@ -169,7 +171,7 @@ public readonly struct Location
 
     public readonly struct Reference : ISpanFormattable
     {
-        private const string lockSign = "$";
+        private const string LockSign = "$";
 
         public Reference(Location location, bool columnLocked, bool rowLocked)
         {
@@ -190,10 +192,10 @@ public readonly struct Location
         public string ToString(string? format, IFormatProvider? formatProvider)
         {
             var columnPrefix = ColumnLocked
-                ? lockSign
+                ? LockSign
                 : "";
             var rowPrefix = RowLocked
-                ? lockSign
+                ? LockSign
                 : "";
 
             return $"{columnPrefix}{Location.PrintX()}{rowPrefix}{Location.PrintY()}";
@@ -207,27 +209,26 @@ public readonly struct Location
             ReadOnlySpan<char> format,
             IFormatProvider? provider)
         {
-            var context = FormatContext.Start;
+            var context = new FormatContext(destination);
             if (ColumnLocked)
             {
-                context = context.Write(ref destination, lockSign);
+                context.Write(LockSign);
             }
 
-            context = context.Write(ref destination, (uint)Location.X, TryFormatCorrectX);
+            context.Write((uint)Location.X, TryFormatCorrectX);
 
             if (RowLocked)
             {
-                context = context.Write(ref destination, lockSign);
+                context.Write(LockSign);
             }
 
-            context = context.Write(
-                ref destination,
+            context.Write(
                 Location.Y,
                 ReadOnlySpan<char>.Empty,
                 CultureInfo.InvariantCulture
             );
 
-            return context.Deconstruct(out charsWritten);
+            return context.Finish(out charsWritten);
         }
     }
 }

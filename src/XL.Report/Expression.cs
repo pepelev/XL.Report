@@ -23,7 +23,9 @@ public abstract class Expression : ISpanFormattable
             ReadOnlySpan<char> format,
             IFormatProvider? provider)
         {
-            return FormatContext.Start.Write(ref destination, content).Deconstruct(out charsWritten);
+            var context = new FormatContext(destination);
+            context.Write(content);
+            return context.Finish(out charsWritten);
         }
     }
 
@@ -59,24 +61,24 @@ public abstract class Expression : ISpanFormattable
             }
 
             var source = content.AsSpan();
-            var context = FormatContext.Start.Write(ref destination, "\"");
+            var context = new FormatContext(destination);
+            context.Write("\"");
             while (source.Length > 0)
             {
                 var quoteIndex = source.IndexOf('"');
                 if (quoteIndex == -1)
                 {
-                    context = context.Write(ref destination, source);
+                    context.Write(source);
                     break;
                 }
 
-                context = context
-                    .Write(ref destination, source[..quoteIndex])
-                    .Write(ref destination, "\"\"");
+                context.Write(source[..quoteIndex]);
+                context.Write("\"\"");
                 source = source[(quoteIndex + 1)..];
             }
 
-            context = context.Write(ref destination, "\"");
-            return context.Deconstruct(out charsWritten);
+            context.Write("\"");
+            return context.Finish(out charsWritten);
         }
     }
 }

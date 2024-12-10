@@ -219,10 +219,10 @@ public readonly struct Range
         ReadOnlySpan<char> format,
         IFormatProvider? provider)
     {
-        return FormatContext.Start
-            .Write(ref destination, LeftTop)
-            .Write(ref destination, ":")
-            .Write(ref destination, RightBottom)
-            .Deconstruct(out charsWritten);
+        var context = new FormatContext(destination);
+        context.Write(LeftTop);
+        context.Write(":");
+        context.Write(RightBottom);
+        return context.Finish(out charsWritten);
     }
 }

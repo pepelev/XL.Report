@@ -44,7 +44,7 @@ internal ref struct FormatContext(Span<char> destination)
 
         if (format(value, destination, out var valueWroteChars))
         {
-            destination = destination[totalCharsWritten..];
+            destination = destination[valueWroteChars..];
             totalCharsWritten += valueWroteChars;
         }
         else
@@ -65,6 +65,7 @@ internal ref struct FormatContext(Span<char> destination)
         {
             value.CopyTo(destination);
             destination = destination[value.Length..];
+            totalCharsWritten += value.Length;
         }
         else
         {

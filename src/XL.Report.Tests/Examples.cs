@@ -1,6 +1,7 @@
 ﻿using System.IO.Compression;
 using System.Runtime.CompilerServices;
 using System.Text;
+using FluentAssertions.Extensions;
 using JetBrains.Annotations;
 using XL.Report.Styles;
 using XL.Report.Styles.Fills;
@@ -24,6 +25,75 @@ public sealed class Examples
             {
                 IUnit<Location> cell = units.Cell(42);
                 sheet.WriteRow(cell);
+                sheet.Complete();
+            }
+
+            book.Complete();
+        }
+
+        await output.VerifyAsync();
+    }
+
+    [Test]
+    public async Task Contents()
+    {
+        using var output = Output.Prepare(TestName);
+        using (var book = new StreamBook(output.Stream, CompressionLevel.Optimal, false))
+        {
+            var units = new Units(book);
+            using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
+            {
+                var content = new Column(
+                    new Row(
+                        units.Cell("Int"),
+                        units.Cell(42)
+                    ),
+                    new Row(
+                        units.Cell("DateTime"),
+                        units.Cell(1.January(2025), Style.Default with { Format = Format.IsoDate })
+                    ),
+                    new Row(
+                        units.Cell("Bool"),
+                        units.Cell(true)
+                    ),
+                    new Row(
+                        units.Cell("Decimal"),
+                        units.Cell(4.2m)
+                    ),
+                    new Row(
+                        units.Cell("Double"),
+                        units.Cell(4.2)
+                    ),
+                    new Row(
+                        units.Cell("Long"),
+                        units.Cell(422L)
+                    ),
+                    new Row(
+                        units.Cell("String"),
+                        units.Cell("String from units.Cell(string)")
+                    ),
+                    new Row(
+                        units.Cell("String"),
+                        units.Cell(Repeat("Long string from units.Cell(string). ", 25))
+                    ),
+                    new Row(
+                        units.Cell("String"),
+                        units.Cell(new InlineString("Inline string"))
+                    ),
+                    new Row(
+                        units.Cell("String"),
+                        units.Cell(book.Strings.Force(Repeat("Long SharedString.Force.", 25)))
+                    ),
+                    new Row(
+                        units.Cell("String"),
+                        units.Cell(
+                            new SharedString.ById(
+                                book.Strings.ForceRegister("SharedString.ById")
+                            )
+                        )
+                    )
+                );
+                sheet.WriteRow(content);
                 sheet.Complete();
             }
 
@@ -764,6 +834,17 @@ public sealed class Examples
         Console.WriteLine("After entry open");
         _ = stream.Read(new byte[1024]);
         Console.WriteLine("After entry read");
+    }
+
+    private static string Repeat(string @string, int times)
+    {
+        var builder = new StringBuilder();
+        for (var i = 0; i < times; i++)
+        {
+            builder.Append(@string);
+        }
+
+        return builder.ToString();
     }
 
     private static T[] Array<T>(int count, [InstantHandle] Func<T> factory)

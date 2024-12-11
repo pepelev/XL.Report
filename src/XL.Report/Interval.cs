@@ -4,22 +4,6 @@ namespace XL.Report;
 
 internal static class Interval
 {
-    public static Interval<T>? MergeIfAdjacent<T>(Interval<T> a, Interval<T> b) 
-        where T : IComparisonOperators<T, T, bool>, INumber<T>
-    {
-        if (a.RightInclusive + T.One == b.LeftInclusive)
-        {
-            return new Interval<T>(a.LeftInclusive, b.RightInclusive);
-        }
-
-        if (b.RightInclusive + T.One == a.LeftInclusive)
-        {
-            return new Interval<T>(b.LeftInclusive, a.RightInclusive);
-        }
-
-        return null;
-    }
-
     public static Interval<T> Shift<T>(this Interval<T> interval, T shift) where T : INumber<T> =>
         new(interval.LeftInclusive + shift, interval.RightInclusive + shift);
 }

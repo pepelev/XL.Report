@@ -1,0 +1,32 @@
+﻿<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <si>
+    <t>SharedString.ById</t>
+  </si>
+  <si>
+    <t>Int</t>
+  </si>
+  <si>
+    <t>DateTime</t>
+  </si>
+  <si>
+    <t>Bool</t>
+  </si>
+  <si>
+    <t>Decimal</t>
+  </si>
+  <si>
+    <t>Double</t>
+  </si>
+  <si>
+    <t>Long</t>
+  </si>
+  <si>
+    <t>String</t>
+  </si>
+  <si>
+    <t>String from units.Cell(string)</t>
+  </si>
+  <si>
+    <t>Long SharedString.Force.Long SharedString.Force.Long SharedString.Force.Long SharedString.Force.Long SharedString.Force.Long SharedString.Force.Long SharedString.Force.Long SharedString.Force.Long SharedString.Force.Long SharedString.Force.Long SharedString.Force.Long SharedString.Force.Long SharedString.Force.Long SharedString.Force.Long SharedString.Force.Long SharedString.Force.Long SharedString.Force.Long SharedString.Force.Long SharedString.Force.Long SharedString.Force.Long SharedString.Force.Long SharedString.Force.Long SharedString.Force.Long SharedString.Force.Long SharedString.Force.</t>
+  </si>
+</sst>

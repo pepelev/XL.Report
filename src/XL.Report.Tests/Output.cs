@@ -39,11 +39,14 @@ public sealed class Output : IDisposable
         await Stream.DisposeAsync();
         Extract();
         await VerifyDirectory(
-            path: ExtractionDirectoryPath,
-            // ReSharper disable ExplicitCallerInfoArgument
-            sourceFile: sourceFile
-            // ReSharper restore ExplicitCallerInfoArgument
-        ).UseDirectory("verified").ToTask();
+                path: ExtractionDirectoryPath,
+                // ReSharper disable ExplicitCallerInfoArgument
+                sourceFile: sourceFile
+                // ReSharper restore ExplicitCallerInfoArgument
+            )
+            .UseDirectory("verified")
+            // .AutoVerify()
+            .ToTask();
     }
 
     private void Extract()

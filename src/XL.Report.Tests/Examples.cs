@@ -6,7 +6,10 @@ using JetBrains.Annotations;
 using XL.Report.Styles;
 using XL.Report.Styles.Fills;
 using static XL.Report.ConditionalFormatting;
-using static XL.Report.Number;
+using static XL.Report.Contents.Number;
+using Formula = XL.Report.Contents.Formula;
+using InlineString = XL.Report.Contents.InlineString;
+using SharedString = XL.Report.Contents.SharedString;
 
 namespace XL.Report.Tests;
 
@@ -400,7 +403,7 @@ public sealed class Examples
 
                 sheet.WriteRow(new BlankRow(3));
 
-                var matrix = new Matrix<(HorizontalAlignment HorizontalAlignment, Content Content), VerticalAlignment>(
+                var matrix = new Matrix<(HorizontalAlignment HorizontalAlignment, Contents.Content Content), VerticalAlignment>(
                     xHeader: new Merge.All(new InlineString("Alignments.Horizontal:")),
                     xAspects:
                     [

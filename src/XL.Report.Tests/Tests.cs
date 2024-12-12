@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using XL.Report.Contents;
 using XL.Report.Styles;
 using XL.Report.Styles.Fills;
 

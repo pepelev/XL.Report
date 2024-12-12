@@ -1,4 +1,4 @@
-﻿namespace XL.Report;
+﻿namespace XL.Report.Contents;
 
 public static class SharedString
 {

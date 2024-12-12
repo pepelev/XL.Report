@@ -1,4 +1,5 @@
-﻿using XL.Report.Styles;
+﻿using XL.Report.Contents;
+using XL.Report.Styles;
 
 namespace XL.Report;
 

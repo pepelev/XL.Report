@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml;
 using XL.Report.Auxiliary;
+using XL.Report.Contents;
 using XL.Report.Styles;
 
 namespace XL.Report;

@@ -1,3 +1,6 @@
+using XL.Report.Contents;
+using String = XL.Report.Contents.String;
+
 namespace XL.Report;
 
 public static class SharedStringsExtensions

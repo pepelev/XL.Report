@@ -5,7 +5,7 @@ namespace XL.Report.Tests;
 internal sealed class IntervalShould
 {
     public static TestCaseData[] Cases =
-    {
+    [
         new TestCaseData(
             new Interval<int>(1, 1),
             new Interval<int>(1, 1)
@@ -34,7 +34,7 @@ internal sealed class IntervalShould
             new Interval<int>(0, 1),
             new Interval<int>(0, 0)
         ).Returns(true)
-    };
+    ];
 
     [Test]
     [TestCaseSource(nameof(Cases))]

@@ -1,17 +1,11 @@
 namespace XL.Report;
 
-public readonly struct Offset : IEquatable<Offset>
+public readonly struct Offset(int x, int y) : IEquatable<Offset>
 {
     public static Offset Zero => new(0, 0);
 
-    public Offset(int x, int y)
-    {
-        X = x;
-        Y = y;
-    }
-
-    public int X { get; }
-    public int Y { get; }
+    public int X => x;
+    public int Y => y;
 
     public bool Equals(Offset other) => X == other.X && Y == other.Y;
     public override bool Equals(object? obj) => obj is Offset offset && Equals(offset);

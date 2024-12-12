@@ -2,7 +2,11 @@ using XL.Report.Auxiliary;
 
 namespace XL.Report;
 
-public readonly record struct SheetRelated<T>(string SheetName, T Value);
+public readonly struct SheetRelated<T>(string sheetName, T value)
+{
+    public string SheetName => sheetName;
+    public T Value => value;
+}
 
 public static class SheetRelated
 {

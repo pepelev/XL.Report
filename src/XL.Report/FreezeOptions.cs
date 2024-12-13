@@ -4,24 +4,25 @@ public sealed class FreezeOptions : IEquatable<FreezeOptions>
 {
     public static FreezeOptions None { get; } = new(0, 0);
 
-    public FreezeOptions(int freezeByX, int freezeByY)
+    public FreezeOptions(int columns, int rows)
     {
-        if (freezeByX < 0)
+        // todo may exceed sheet size
+        if (columns < 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(freezeByY), freezeByX, "must be non-negative");
+            throw new ArgumentOutOfRangeException(nameof(rows), columns, "must be non-negative");
         }
 
-        if (freezeByY < 0)
+        if (rows < 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(freezeByY), freezeByY, "must be non-negative");
+            throw new ArgumentOutOfRangeException(nameof(rows), rows, "must be non-negative");
         }
 
-        FreezeByX = freezeByX;
-        FreezeByY = freezeByY;
+        Columns = columns;
+        Rows = rows;
     }
 
-    public int FreezeByX { get; }
-    public int FreezeByY { get; }
+    public int Columns { get; }
+    public int Rows { get; }
 
     public void WriteAsSingleSheetView(Xml xml)
     {
@@ -37,17 +38,17 @@ public sealed class FreezeOptions : IEquatable<FreezeOptions>
                 xml.WriteAttribute("workbookViewId", "0");
                 using (xml.WriteStartElement("pane"))
                 {
-                    if (FreezeByX > 0)
+                    if (Columns > 0)
                     {
-                        xml.WriteAttribute("xSplit", FreezeByX);
+                        xml.WriteAttribute("xSplit", Columns);
                     }
 
-                    if (FreezeByY > 0)
+                    if (Rows > 0)
                     {
-                        xml.WriteAttribute("ySplit", FreezeByY);
+                        xml.WriteAttribute("ySplit", Rows);
                     }
 
-                    var topLeftCell = new Location(FreezeByX + 1, FreezeByY + 1);
+                    var topLeftCell = new Location(Columns + 1, Rows + 1);
                     xml.WriteAttribute("topLeftCell", topLeftCell);
                     xml.WriteAttribute("state", "frozen");
                 }
@@ -59,7 +60,7 @@ public sealed class FreezeOptions : IEquatable<FreezeOptions>
     {
         if (ReferenceEquals(null, other)) return false;
         if (ReferenceEquals(this, other)) return true;
-        return FreezeByX == other.FreezeByX && FreezeByY == other.FreezeByY;
+        return Columns == other.Columns && Rows == other.Rows;
     }
 
     public override bool Equals(object? obj)
@@ -69,7 +70,7 @@ public sealed class FreezeOptions : IEquatable<FreezeOptions>
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(FreezeByX, FreezeByY);
+        return HashCode.Combine(Columns, Rows);
     }
 
     public static bool operator ==(FreezeOptions? left, FreezeOptions? right)

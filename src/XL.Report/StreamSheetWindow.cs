@@ -71,39 +71,28 @@ internal sealed partial class StreamSheetWindow : SheetWindow, IDisposable
         row.Place(range.Left, cell);
     }
 
-    public override void Merge(Size size, Content content, StyleId? styleId)
+    public override void Merge(Content content, StyleId? styleId)
     {
-        if (!size.HasArea)
-        {
-            throw new ArgumentException($"not {nameof(size.HasArea)}", nameof(size));
-        }
-
-        var range = Range;
-        if (!range.Size.Contains(size))
-        {
-            throw new ArgumentException($"is bigger than {nameof(Range)}", nameof(size));
-        }
-
         if (!valid)
         {
             throw new InvalidOperationException();
         }
 
-        var top = range.Top;
-        var interval = new Interval<int>(range.Left, range.Left + size.Width - 1);
-        for (var i = 0; i < size.Height; i++)
+        var range = Range;
+        var interval = new Interval<int>(range.Left, range.Right);
+        for (var y = range.Top; y <= range.Bottom; y++)
         {
-            ref var row = ref CollectionsMarshal.GetValueRefOrAddDefault(rows, top + i, out var exists);
+            ref var row = ref CollectionsMarshal.GetValueRefOrAddDefault(rows, y, out var exists);
             if (!exists)
             {
                 row = new Row();
             }
 
-            var isMain = i == 0;
+            var isMain = y == range.Top;
             row.Merge(isMain, interval, content, styleId);
         }
 
-        mergedRanges.Add(new Range(range.LeftTop, size));
+        mergedRanges.Add(range);
     }
 
     public override IDisposable Reduce(Reduction reduction)

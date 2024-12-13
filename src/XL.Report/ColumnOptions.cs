@@ -31,7 +31,7 @@ public sealed record ColumnOptions(float? Width = null, StyleId? StyleId = null,
             }
         }
     }
-    
+
     public sealed class Collection : IReadOnlyCollection<(int X, ColumnOptions Options)>
     {
         private readonly ImmutableSortedDictionary<int, ColumnOptions> content;

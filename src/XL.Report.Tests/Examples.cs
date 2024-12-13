@@ -404,7 +404,7 @@ public sealed class Examples
                 sheet.WriteRow(new BlankRow(3));
 
                 var matrix = new Matrix<(HorizontalAlignment HorizontalAlignment, Contents.Content Content), VerticalAlignment>(
-                    xHeader: new Merge.All(new InlineString("Alignments.Horizontal:")),
+                    xHeader: new Merge.WholeWindow(new InlineString("Alignments.Horizontal:")),
                     xAspects:
                     [
                         (

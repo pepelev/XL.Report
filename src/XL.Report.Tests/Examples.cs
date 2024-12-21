@@ -37,7 +37,7 @@ public sealed class Examples
         using var output = Output.Prepare(TestName);
         using (var book = new StreamBook(output.Stream))
         {
-            var units = new Units(book);
+            var units = new Book.Units(book);
             using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
             {
                 IUnit<Location> cell = units.Cell(42);
@@ -73,7 +73,7 @@ public sealed class Examples
         using var output = Output.Prepare(TestName);
         using (var book = new StreamBook(output.Stream))
         {
-            var units = new Units(book);
+            var units = new Book.Units(book);
             var options = SheetOptions.Default
                 .With(1, new ColumnOptions(Width: 24))
                 .With(2, new ColumnOptions(Width: 07))
@@ -142,7 +142,7 @@ public sealed class Examples
         using var output = Output.Prepare(TestName);
         using (var book = new StreamBook(output.Stream))
         {
-            var units = new Units(book);
+            var units = new Book.Units(book);
             using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
             {
                 var content = new Column(
@@ -211,7 +211,7 @@ public sealed class Examples
         using var output = Output.Prepare(TestName);
         using (var book = new StreamBook(output.Stream))
         {
-            var units = new Units(book);
+            var units = new Book.Units(book);
             using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
             {
                 sheet.WriteRow(
@@ -238,7 +238,7 @@ public sealed class Examples
         using var output = Output.Prepare(TestName);
         using (var book = new StreamBook(output.Stream))
         {
-            var units = new Units(book);
+            var units = new Book.Units(book);
             using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
             {
                 var dateStyle = Style.Default.With(Format.IsoDateTime);
@@ -267,7 +267,7 @@ public sealed class Examples
         using var output = Output.Prepare(TestName);
         using (var book = new StreamBook(output.Stream))
         {
-            var units = new Units(book);
+            var units = new Book.Units(book);
             using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
             {
                 var row = new Row(
@@ -305,7 +305,7 @@ public sealed class Examples
         using var output = Output.Prepare(TestName);
         using (var book = new StreamBook(output.Stream))
         {
-            var units = new Units(book);
+            var units = new Book.Units(book);
 
             var a = new Expression.Verbatim("10");
             var b = new Expression.Verbatim("25");
@@ -413,7 +413,7 @@ public sealed class Examples
         using var output = Output.Prepare(TestName);
         using (var book = new StreamBook(output.Stream))
         {
-            var units = new Units(book);
+            var units = new Book.Units(book);
             using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
             {
                 var times = Style.Default.WithFontFamily("Times New Roman");
@@ -442,7 +442,7 @@ public sealed class Examples
         using var output = Output.Prepare(TestName);
         using (var book = new StreamBook(output.Stream))
         {
-            var units = new Units(book);
+            var units = new Book.Units(book);
             var styles = book.Styles;
             var bold = styles.Register(Style.Default.Bold());
             var options = new SheetOptions(
@@ -801,7 +801,7 @@ public sealed class Examples
         using var output = Output.Prepare(TestName);
         using (var book = new StreamBook(output.Stream))
         {
-            var units = new Units(book);
+            var units = new Book.Units(book);
             for (var i = 0; i < 10; i++)
             {
                 using var sheet = book.CreateSheet($"{TestName} {i + 1}", SheetOptions.Default);
@@ -825,7 +825,7 @@ public sealed class Examples
         using var output = Output.Prepare(TestName);
         using (var book = new StreamBook(output.Stream))
         {
-            var units = new Units(book);
+            var units = new Book.Units(book);
             using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
             {
                 var row = units.Merge("Merged cell", new Size(5, 2));
@@ -849,7 +849,7 @@ public sealed class Examples
 
         using var output = Output.Prepare(TestName);
         using var book = new StreamBook(output.Stream);
-        var units = new Units(book);
+        var units = new Book.Units(book);
         using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
         {
             for (var i = 0; i < 100_000; i++)
@@ -896,7 +896,7 @@ public sealed class Examples
         using var output = Output.Prepare(TestName);
         using (var book = new StreamBook(output.Stream))
         {
-            var units = new Units(book);
+            var units = new Book.Units(book);
             using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
             {
                 var row = new Row(

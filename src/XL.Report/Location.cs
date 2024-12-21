@@ -23,11 +23,7 @@ using System;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-public readonly struct Location
-    : IEquatable<Location>, ISpanFormattable
-#if NET7_0_OR_GREATER
-    , IParsable<Location>
-#endif
+public readonly partial struct Location(int x, int y) : IEquatable<Location>, ISpanFormattable, IParsable<Location>
 {
     private const char ZeroLetter = (char) (FirstLetter - 1);
     private const char FirstLetter = 'A';
@@ -47,24 +43,18 @@ public readonly struct Location
     public const int XLength = MaxX - MinX + 1;
     public const int YLength = MaxY - MinY + 1;
 
-    public int X { get; }
-    public int Y { get; }
-
-    public Location(int x, int y)
-    {
-        X = x;
-        Y = y;
-    }
+    public int X { get; } = x;
+    public int Y { get; } = y;
 
     public static bool TryParse(string? value, IFormatProvider? formatProvider, out Location result)
+        => TryParse(value, out result);
+
+    public static bool TryParse(string? value, out Location result)
     {
         if (value == null)
             return Fail(out result);
 
-        // todo to  static field
-        var flags = RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.CultureInvariant;
-        var regex = new Regex(@"^\s*(?<X>[a-z]{1,3})(?<Y>[0-9]{1,7})\s*$", flags);
-        if (regex.Match(value) is { Success: true } match)
+        if (Pattern().Match(value) is { Success: true } match)
         {
             var x = 0;
             foreach (var @char in match.Groups["X"].ValueSpan)
@@ -72,24 +62,31 @@ public readonly struct Location
                 x = x * AlphabetPower + char.ToUpperInvariant(@char) - ZeroLetter;
             }
 
-            var y = int.Parse(match.Groups["Y"].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var yParsed = int.TryParse(
+                match.Groups["Y"].ValueSpan,
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out var y
+            );
             result = new Location(x, y);
-            return result.IsCorrect();
+            return yParsed && result.IsCorrect();
         }
 
         result = default;
         return false;
+
+        bool Fail(out Location result)
+        {
+            result = default;
+            return false;
+        }
     }
 
-    private static bool Fail(out Location result)
-    {
-        result = default;
-        return false;
-    }
+    public static Location Parse(string value, IFormatProvider? formatProvider) => Parse(value);
 
-    public static Location Parse(string value, IFormatProvider? formatProvider)
+    public static Location Parse(string value)
     {
-        return TryParse(value, formatProvider, out var result)
+        return TryParse(value, out var result)
             ? result
             : throw new FormatException($"Value '{value}' has incorrect {nameof(Location)} format");
     }
@@ -136,14 +133,11 @@ public readonly struct Location
         return true;
     }
 
-    public string AsString() => IsCorrect()
-        ? PrintCorrectValue()
-        : $"{X}, {Y}";
+    public string AsString() => FormatContext.ToString(this);
 
     public override string ToString() => AsString();
-    public string ToString(string? format, IFormatProvider? formatProvider) => AsString();
+    public string ToString(string? format, IFormatProvider? formatProvider) => ToString();
 
-    // todo test
     public bool TryFormat(
         Span<char> destination,
         out int charsWritten,
@@ -167,22 +161,7 @@ public readonly struct Location
         }
     }
 
-    private string PrintCorrectValue() => PrintX() + PrintY();
-    private string PrintX() => PrintX((uint) X);
-
-    private static string PrintX(uint x)
-    {
-        if (x == 0)
-            return "";
-
-        x--;
-        var reminder = x / AlphabetPower;
-        var current = x % AlphabetPower;
-        return PrintX(reminder) + GetChar(current);
-    }
-
     private static char GetChar(uint code) => (char) (code + FirstLetter);
-    private string PrintY() => Y.ToString(CultureInfo.InvariantCulture);
     public static bool operator ==(Location a, Location b) => a.Equals(b);
     public static bool operator !=(Location a, Location b) => !(a == b);
 
@@ -206,19 +185,8 @@ public readonly struct Location
         public bool ColumnLocked { get; }
         public bool RowLocked { get; }
 
-        public string ToString(string? format, IFormatProvider? formatProvider)
-        {
-            var columnPrefix = ColumnLocked
-                ? LockSign
-                : "";
-            var rowPrefix = RowLocked
-                ? LockSign
-                : "";
-
-            return $"{columnPrefix}{Location.PrintX()}{rowPrefix}{Location.PrintY()}";
-        }
-
-        public override string ToString() => ToString(null, CultureInfo.InvariantCulture);
+        public string ToString(string? format, IFormatProvider? formatProvider) => FormatContext.ToString(this);
+        public override string ToString() => ToString(null, null);
 
         public bool TryFormat(
             Span<char> destination,
@@ -248,4 +216,10 @@ public readonly struct Location
             return context.Finish(out charsWritten);
         }
     }
+
+    [GeneratedRegex(
+        @"^\s*(?<X>[a-z]{1,3})(?<Y>[0-9]{1,7})\s*$",
+        RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.CultureInvariant
+    )]
+    private static partial Regex Pattern();
 }

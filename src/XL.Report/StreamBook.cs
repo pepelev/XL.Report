@@ -24,41 +24,38 @@ using XL.Report.Styles;
 
 namespace XL.Report;
 
-public sealed class StreamBook : Book
+public sealed class StreamBook(
+    Stream output,
+    SharedStrings sharedStrings,
+    CompressionLevel compressionLevel = CompressionLevel.Optimal,
+    bool leaveOpen = false
+) : Book
 {
     private sealed record DefinedName(string Id, string? Comment, StreamSheetBuilder Sheet, Range Range);
 
-    private readonly ZipArchive archive;
-    private readonly CompressionLevel compressionLevel;
+    private readonly ZipArchive archive = new(output, ZipArchiveMode.Create, leaveOpen);
     private readonly List<StreamSheetBuilder> sheets = new();
     private readonly Dictionary<string, DefinedName> definedNames = new();
 
-    public StreamBook(Stream output, CompressionLevel compressionLevel, bool leaveOpen)
-        : this(
-            output,
-            new BoundedSharedStrings(
-                64 * 1024,
-                32,
-                64 * 1024 * 16
-            ),
-            compressionLevel,
-            leaveOpen)
-    {
-    }
-
     public StreamBook(
         Stream output,
-        SharedStrings sharedStrings,
-        CompressionLevel compressionLevel,
-        bool leaveOpen)
+        CompressionLevel compressionLevel = CompressionLevel.Optimal,
+        bool leaveOpen = false
+    ) : this(
+        output,
+        new BoundedSharedStrings(
+            64 * 1024,
+            32,
+            64 * 1024 * 16
+        ),
+        compressionLevel,
+        leaveOpen
+    )
     {
-        Strings = sharedStrings;
-        this.compressionLevel = compressionLevel;
-        archive = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen);
     }
 
     public override Style.Collection Styles { get; } = new();
-    public override SharedStrings Strings { get; }
+    public override SharedStrings Strings { get; } = sharedStrings;
 
     public override void Dispose()
     {
@@ -347,9 +344,7 @@ public sealed class StreamBook : Book
 
         public override T WriteRow<T>(IUnit<T> unit)
         {
-            var result = unit.Write(window);
-            window.Flush(RowOptions.Default);
-            return result;
+            return WriteRow(unit, RowOptions.Default);
         }
 
         public override T WriteRow<T>(IUnit<T> unit, RowOptions options)

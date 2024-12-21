@@ -46,6 +46,7 @@ public sealed class Output : IDisposable
 
     public Stream Stream { get; }
 
+    public static bool AutoVerify => false;
     private static string GetStreamPath(string testName) => $"{ResultsDirectory}/{testName}.xlsx";
     private static string GetExtractionDirectoryPath(string testName) => $"{ResultsDirectory}/{testName}";
     private string StreamPath => GetStreamPath(testName);
@@ -55,15 +56,20 @@ public sealed class Output : IDisposable
     {
         await Stream.DisposeAsync();
         Extract();
-        await VerifyDirectory(
+        var verify = VerifyDirectory(
                 path: ExtractionDirectoryPath,
                 // ReSharper disable ExplicitCallerInfoArgument
                 sourceFile: sourceFile
                 // ReSharper restore ExplicitCallerInfoArgument
             )
-            .UseDirectory("verified")
-            // .AutoVerify()
-            .ToTask();
+            .UseDirectory("verified");
+
+        if (AutoVerify)
+        {
+            verify = verify.AutoVerify();
+        }
+
+        await verify.ToTask();
     }
 
     private void Extract()

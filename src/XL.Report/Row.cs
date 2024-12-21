@@ -17,29 +17,43 @@
 
 namespace XL.Report;
 
-public readonly struct Row : IUnit<Range>
+public sealed class Row(params IUnit<Range>[] units) : IUnit<Range>, IUnit<Range[]>
 {
-    private readonly IUnit<Range>[] units;
-
-    public Row(params IUnit<Range>[] units)
-    {
-        this.units = units;
-    }
-
     public Range Write(SheetWindow window)
     {
         var written = new Range(window.Range.LeftTop, Size.Empty);
-        foreach (var unit in units ?? Array.Empty<IUnit<Range>>())
+        foreach (var unit in units)
         {
-            Range range;
             using (window.Reduce(new Offset(written.Size.Width, 0)))
             {
-                range = unit.Write(window);
+                var range = unit.Write(window);
+                written = Range.MinimalBounding(written, range);
             }
-
-            written = Range.MinimalBounding(written, range);
         }
 
         return written;
+    }
+
+    Range[] IUnit<Range[]>.Write(SheetWindow window)
+    {
+        if (units is [])
+        {
+            return [];
+        }
+
+        var result = new Range[units.Length];
+        var written = new Range(window.Range.LeftTop, Size.Empty);
+        for (var i = 0; i < units.Length; i++)
+        {
+            var unit = units[i];
+            using (window.Reduce(new Offset(written.Size.Width, 0)))
+            {
+                var range = unit.Write(window);
+                written = Range.MinimalBounding(written, range);
+                result[i] = range;
+            }
+        }
+
+        return result;
     }
 }

@@ -108,8 +108,8 @@ public sealed class Tests
                 new Cell(new Number.Integral(509), book.Styles.Register(bigRed))
             );
 
-            sheet.WriteRow(row);
-            sheet.WriteRow(row);
+            sheet.WriteRow<Range>(row);
+            sheet.WriteRow<Range>(row);
             sheet.Complete();
         }
 
@@ -129,8 +129,8 @@ public sealed class Tests
                 new Cell(new Number.Integral(511), book.Styles.Register(bigRed))
             );
 
-            sheet.WriteRow(row);
-            sheet.WriteRow(row);
+            sheet.WriteRow<Range>(row);
+            sheet.WriteRow<Range>(row);
             sheet.Complete();
         }
 

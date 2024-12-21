@@ -24,6 +24,9 @@ public sealed record SheetOptions(FreezeOptions Freeze, ColumnOptions.Collection
         ColumnOptions.Collection.Default
     );
 
+    public SheetOptions With(int x, ColumnOptions options) =>
+        this with { Columns = Columns.With(x, options) };
+
     public void Write(Xml xml)
     {
         Freeze.WriteAsSingleSheetView(xml);

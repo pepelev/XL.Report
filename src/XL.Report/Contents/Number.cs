@@ -31,30 +31,16 @@ public static class Number
         }
     }
 
-    public sealed class Integral : Content
+    public sealed class Integral(long content) : Content
     {
-        private readonly long content;
-
-        public Integral(long content)
-        {
-            this.content = content;
-        }
-
         public override void Write(Xml xml)
         {
             Number.Write(xml, content, "0");
         }
     }
 
-    public sealed class Fractional : Content
+    public sealed class Fractional(double content) : Content
     {
-        private readonly double content;
-
-        public Fractional(double content)
-        {
-            this.content = content;
-        }
-
         public override void Write(Xml xml)
         {
             Write(xml, content);
@@ -66,35 +52,21 @@ public static class Number
         }
     }
 
-    public sealed class Financial : Content
+    public sealed class Financial(decimal content) : Content
     {
-        private readonly decimal content;
-
-        public Financial(decimal content)
-        {
-            this.content = content;
-        }
-
         public override void Write(Xml xml)
         {
             Number.Write(xml, content, "0.############################");
         }
     }
 
-    public sealed class Instant : Content
+    public sealed class Instant(DateTime content) : Content
     {
-        private static readonly DateTime offset = new(1899, 12, 30);
-
-        private readonly DateTime content;
-
-        public Instant(DateTime content)
-        {
-            this.content = content;
-        }
+        private static readonly DateTime Offset = new(1899, 12, 30);
 
         public override void Write(Xml xml)
         {
-            var dateOffset = (content.Date - offset).Ticks / TimeSpan.TicksPerDay;
+            var dateOffset = (content.Date - Offset).Ticks / TimeSpan.TicksPerDay;
             var timeOfDay = content.TimeOfDay.Ticks / (double)TimeSpan.TicksPerDay;
             var sum = dateOffset + timeOfDay;
             Fractional.Write(xml, sum);

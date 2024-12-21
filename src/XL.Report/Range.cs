@@ -90,6 +90,8 @@ public readonly struct Range :
     public int Right => LeftTop.X + Size.Width - 1;
     public int Top => LeftTop.Y;
     public int Bottom => LeftTop.Y + Size.Height - 1;
+    public int Width => Size.Width;
+    public int Height => Size.Height;
 
     public Location RightBottom => new(Right, Bottom);
     public Location RightTop => new(Right, Top);
@@ -244,4 +246,59 @@ public readonly struct Range :
 
     public bool IsValid => Size.HasArea && EntireSheet.Contains(this);
     public ValidRange EnsureValid() => new(this);
+
+    public Range? TryUnion(Range other)
+    {
+        if ((Top, Bottom) == (other.Top, other.Bottom))
+        {
+            // this|other
+            if (Right + 1 == other.Left)
+            {
+                return new Range(
+                    LeftTop,
+                    new Size(Width + other.Width, Height)
+                );
+            }
+
+            // other|this
+            if (other.Right + 1 == Left)
+            {
+                return new Range(
+                    other.LeftTop,
+                    new Size(other.Width + Width, Height)
+                );
+            }
+
+            return null;
+        }
+
+        if ((Left, Right) == (other.Left, other.Right))
+        {
+            // this
+            // -----
+            // other
+            if (Bottom + 1 == other.Top)
+            {
+                return new Range(
+                    LeftTop,
+                    new Size(Width, Height + other.Height)
+                );
+            }
+
+            // other
+            // -----
+            // this
+            if (other.Bottom + 1 == Top)
+            {
+                return new Range(
+                    other.LeftTop,
+                    new Size(Width, other.Height + Height)
+                );
+            }
+
+            return null;
+        }
+
+        return null;
+    }
 }

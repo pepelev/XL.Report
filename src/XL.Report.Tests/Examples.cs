@@ -20,13 +20,10 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using FluentAssertions.Extensions;
 using JetBrains.Annotations;
+using XL.Report.Contents;
 using XL.Report.Styles;
 using XL.Report.Styles.Fills;
 using static XL.Report.ConditionalFormatting;
-using static XL.Report.Contents.Number;
-using Formula = XL.Report.Contents.Formula;
-using InlineString = XL.Report.Contents.InlineString;
-using SharedString = XL.Report.Contents.SharedString;
 
 namespace XL.Report.Tests;
 
@@ -38,7 +35,7 @@ public sealed class Examples
     public async Task Simplest_Book()
     {
         using var output = Output.Prepare(TestName);
-        using (var book = new StreamBook(output.Stream, CompressionLevel.Optimal, false))
+        using (var book = new StreamBook(output.Stream))
         {
             var units = new Units(book);
             using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
@@ -54,11 +51,96 @@ public sealed class Examples
         await output.VerifyAsync();
     }
 
+    private sealed record Student(
+        string Name,
+        string Group,
+        double AverageScore
+    );
+
+    [Test]
+    public async Task Table()
+    {
+        Student[] students =
+        [
+            new Student("Amanda Dominguez", "03-701", 3.9),
+            new Student("Aubrie Frye", "03-704", 4.2),
+            new Student("Marilyn Pierce", "03-706", 3.2),
+            new Student("Juliette Eaton", "03-701", 4.9),
+            new Student("Carl Collier", "03-701", 4.0),
+            new Student("Grant Jordan", "03-704", 4.6),
+        ];
+
+        using var output = Output.Prepare(TestName);
+        using (var book = new StreamBook(output.Stream))
+        {
+            var units = new Units(book);
+            var options = SheetOptions.Default
+                .With(1, new ColumnOptions(Width: 24))
+                .With(2, new ColumnOptions(Width: 07))
+                .With(3, new ColumnOptions(Width: 14));
+            var headerStyle = Style.Default.Bold();
+            var groupStyle = Style.Default.With(HorizontalAlignment.Right());
+            var scoreStyle = Style.Default with { Format = new Format("0.00") };
+            var bad = book.Styles.Register(
+                new Style.Diff(
+                    Fill: new SolidFill(
+                        new Color(0xDD, 0x73, 0x73)
+                    )
+                )
+            );
+            using (var sheet = book.CreateSheet(TestName, options))
+            {
+                var scoreData = new RangeSet();
+                var table = new Table<Student>(
+                    new Table<Student>.Column(
+                        units.Cell("Name", headerStyle),
+                        student => units.Cell(student.Name)
+                    ),
+                    new Table<Student>.Column(
+                        units.Cell("Group", headerStyle.With(HorizontalAlignment.Right())),
+                        student => units.Cell(student.Group, groupStyle)
+                    ),
+                    new Table<Student>.Column(
+                        units.Cell("Average score", headerStyle.With(HorizontalAlignment.Right())),
+                        student => units.Cell(student.AverageScore, scoreStyle)
+                    )
+                );
+                var body = sheet.WriteRow(table.Header);
+                foreach (var student in students)
+                {
+                    var row = body.Row(student);
+                    var valueRanges = sheet.WriteRow<Range[]>(row);
+                    scoreData.Add(valueRanges[^1]);
+                }
+
+                sheet.AddConditionalFormatting(
+                    new ConditionalFormatting(
+                        scoreData,
+                        new[]
+                        {
+                            new ValueRule(
+                                Condition.LessThan(
+                                    new Expression.Verbatim("4")
+                                ),
+                                bad
+                            )
+                        }
+                    )
+                );
+                sheet.Complete();
+            }
+
+            book.Complete();
+        }
+
+        await output.VerifyAsync();
+    }
+
     [Test]
     public async Task Contents()
     {
         using var output = Output.Prepare(TestName);
-        using (var book = new StreamBook(output.Stream, CompressionLevel.Optimal, false))
+        using (var book = new StreamBook(output.Stream))
         {
             var units = new Units(book);
             using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
@@ -127,7 +209,7 @@ public sealed class Examples
     public async Task Blank_Line_Within_RowOptions()
     {
         using var output = Output.Prepare(TestName);
-        using (var book = new StreamBook(output.Stream, CompressionLevel.Optimal, false))
+        using (var book = new StreamBook(output.Stream))
         {
             var units = new Units(book);
             using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
@@ -154,7 +236,7 @@ public sealed class Examples
     public async Task Data_Types()
     {
         using var output = Output.Prepare(TestName);
-        using (var book = new StreamBook(output.Stream, CompressionLevel.Optimal, false))
+        using (var book = new StreamBook(output.Stream))
         {
             var units = new Units(book);
             using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
@@ -169,7 +251,7 @@ public sealed class Examples
                     units.Cell(new Expression.Verbatim("TODAY()"), dateStyle),
                     units.BlankCell(blueBackground)
                 );
-                sheet.WriteRow(row);
+                sheet.WriteRow<Range>(row);
                 sheet.Complete();
             }
 
@@ -183,7 +265,7 @@ public sealed class Examples
     public async Task Formulas()
     {
         using var output = Output.Prepare(TestName);
-        using (var book = new StreamBook(output.Stream, CompressionLevel.Optimal, false))
+        using (var book = new StreamBook(output.Stream))
         {
             var units = new Units(book);
             using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
@@ -193,7 +275,7 @@ public sealed class Examples
                     units.Cell(24),
                     units.Cell(new Expression.Verbatim("A1+B1"))
                 );
-                sheet.WriteRow(row);
+                sheet.WriteRow<Range>(row);
                 sheet.Complete();
             }
 
@@ -221,7 +303,7 @@ public sealed class Examples
     public async Task Conditional_Formattings()
     {
         using var output = Output.Prepare(TestName);
-        using (var book = new StreamBook(output.Stream, CompressionLevel.Optimal, false))
+        using (var book = new StreamBook(output.Stream))
         {
             var units = new Units(book);
 
@@ -315,7 +397,7 @@ public sealed class Examples
                         units.Cell(random.Next(100))
                     );
 
-                    sheet.WriteRow(row);
+                    sheet.WriteRow<Range>(row);
                 }
 
                 sheet.WriteRow<Range>(units.Cell(new Formula(new Expression.Verbatim("10/0"))));
@@ -329,7 +411,7 @@ public sealed class Examples
     public async Task Font_Styling()
     {
         using var output = Output.Prepare(TestName);
-        using (var book = new StreamBook(output.Stream, CompressionLevel.Optimal, false))
+        using (var book = new StreamBook(output.Stream))
         {
             var units = new Units(book);
             using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
@@ -344,7 +426,7 @@ public sealed class Examples
                     units.Cell("Green", Style.Default.WithFontColor(new Color(15, 200, 15)))
                 );
 
-                sheet.WriteRow(row);
+                sheet.WriteRow<Range>(row);
                 sheet.Complete();
             }
 
@@ -358,7 +440,7 @@ public sealed class Examples
     public async Task Styling()
     {
         using var output = Output.Prepare(TestName);
-        using (var book = new StreamBook(output.Stream, CompressionLevel.Optimal, false))
+        using (var book = new StreamBook(output.Stream))
         {
             var units = new Units(book);
             var styles = book.Styles;
@@ -389,7 +471,7 @@ public sealed class Examples
             using (var sheet = book.CreateSheet(TestName, options))
             {
                 sheet.WriteRow<Range>(units.Cell("Fonts:", bold));
-                sheet.WriteRow(
+                sheet.WriteRow<Range>(
                     new Row(
                         units.Cell("Default"),
                         units.Cell("Arial", Style.Default.WithFontFamily("Arial")),
@@ -420,7 +502,7 @@ public sealed class Examples
 
                 sheet.WriteRow(new BlankRow(3));
 
-                var matrix = new Matrix<(HorizontalAlignment HorizontalAlignment, Contents.Content Content), VerticalAlignment>(
+                var matrix = new Matrix<(HorizontalAlignment HorizontalAlignment, Content Content), VerticalAlignment>(
                     xHeader: new Merge.WholeWindow(new InlineString("Alignments.Horizontal:")),
                     xAspects:
                     [
@@ -430,7 +512,7 @@ public sealed class Examples
                         ),
                         (
                             units.Cell("By content, number"),
-                            (HorizontalAlignment.ByContent, new Integral(42))
+                            (HorizontalAlignment.ByContent, new Number.Integral(42))
                         ),
                         (
                             units.Cell("Left, no indent"),
@@ -504,7 +586,7 @@ public sealed class Examples
 
                 sheet.WriteRow<Range>(units.Cell("Fills:", bold));
 
-                sheet.WriteRow(
+                sheet.WriteRow<Range>(
                     new Row(
                         new Column(
                             units.Cell("Solid"),
@@ -619,7 +701,7 @@ public sealed class Examples
 
                 sheet.WriteRow<Range>(units.Cell("Borders:", bold));
                 sheet.WriteRow(new BlankRow());
-                sheet.WriteRow(
+                sheet.WriteRow<Range>(
                     new Row(
                         new BlankColumn(),
                         units.Cell(
@@ -717,7 +799,7 @@ public sealed class Examples
     public async Task Multiple_Sheets()
     {
         using var output = Output.Prepare(TestName);
-        using (var book = new StreamBook(output.Stream, CompressionLevel.Optimal, false))
+        using (var book = new StreamBook(output.Stream))
         {
             var units = new Units(book);
             for (var i = 0; i < 10; i++)
@@ -727,7 +809,7 @@ public sealed class Examples
                     units.Cell("Sheet index:"),
                     units.Cell(i)
                 );
-                sheet.WriteRow(row);
+                sheet.WriteRow<Range>(row);
                 sheet.Complete();
             }
 
@@ -741,7 +823,7 @@ public sealed class Examples
     public async Task Merged_Cell()
     {
         using var output = Output.Prepare(TestName);
-        using (var book = new StreamBook(output.Stream, CompressionLevel.Optimal, false))
+        using (var book = new StreamBook(output.Stream))
         {
             var units = new Units(book);
             using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
@@ -766,7 +848,7 @@ public sealed class Examples
         var contents = Array(1024, RandomWord);
 
         using var output = Output.Prepare(TestName);
-        using var book = new StreamBook(output.Stream, CompressionLevel.Optimal, false);
+        using var book = new StreamBook(output.Stream);
         var units = new Units(book);
         using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
         {
@@ -781,7 +863,7 @@ public sealed class Examples
                     ) as IUnit<Range>
                 );
                 var row = new Row(cells);
-                sheet.WriteRow(row);
+                sheet.WriteRow<Range>(row);
             }
 
             sheet.Complete();
@@ -812,7 +894,7 @@ public sealed class Examples
     public async Task Hyperlinks()
     {
         using var output = Output.Prepare(TestName);
-        using (var book = new StreamBook(output.Stream, CompressionLevel.Optimal, false))
+        using (var book = new StreamBook(output.Stream))
         {
             var units = new Units(book);
             using (var sheet = book.CreateSheet(TestName, SheetOptions.Default))
@@ -824,7 +906,7 @@ public sealed class Examples
                     units.Cell("range"),
                     units.Cell("defined name")
                 );
-                sheet.WriteRow(row);
+                sheet.WriteRow<Range>(row);
                 sheet.DefineName("area", Range.Parse("E2:E5").EnsureValid());
                 sheet.Hyperlinks.Add(Range.Parse("A1:A1").EnsureValid(), "https://example.com", tooltip: "https");
                 sheet.Hyperlinks.Add(Range.Parse("B1:B1").EnsureValid(), Hyperlink.Mailto("who@example.com", "Hello"), tooltip: "mail");
